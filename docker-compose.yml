@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vaanipay-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vaanipay
+      POSTGRES_USER: vaanipay_user
+      POSTGRES_PASSWORD: vaanipay_secure_demo_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vaanipay_user -d vaanipay"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vaanipay-backend
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+psycopg2://vaanipay_user:vaanipay_secure_demo_pass@postgres:5432/vaanipay
+      SECRET_KEY: vaanipay-demo-secret-key-replace-with-env-secret-in-production
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000","http://127.0.0.1:5173"]'
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vaanipay-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+    driver: local
