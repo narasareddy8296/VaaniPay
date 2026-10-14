@@ -17,6 +17,7 @@ from app.models.handoff import HandoffCase
 from app.models.audit import AuditEvent
 from app.parsers.number_parser import parse_amount, amount_to_words, ParseStatus
 from app.parsers.payee_resolver import PayeeResolver, PayeeResolutionStatus
+from app.parsers.intent_parser import parse_confirmation_intent, ConfirmationIntent
 from app.core.cross_check import CrossCheckEngine, CrossCheckStatus
 from app.core.liveness import (
     generate_liveness_challenge,
@@ -93,10 +94,11 @@ class DialogueStateMachine:
             )
 
         # 3. Handle Explicit Cancellation Action or Spoken Cancel
+        intent_eval = parse_confirmation_intent(request.transcript)
         transcript_clean = (request.transcript or "").strip().lower()
         if (
             request.action == DialogueAction.CANCEL
-            or any(w in transcript_clean for w in ["cancel", "cancel payment", "ruk jao", "mat bhejo"])
+            or intent_eval.intent == ConfirmationIntent.CANCEL
         ):
             return self._handle_cancellation(db, session, account)
 
@@ -131,7 +133,7 @@ class DialogueStateMachine:
         if current_state in (DialogueState.CLARIFY_AMOUNT, DialogueState.CLARIFY_PAYEE):
             return self._handle_clarification_state(db, session, account, request, current_state)
 
-        if current_state == DialogueState.READBACK:
+        if current_state in (DialogueState.READBACK, DialogueState.CONFIRM):
             return self._handle_readback_state(db, session, account, request)
 
         if current_state == DialogueState.LIVENESS:
@@ -181,14 +183,17 @@ class DialogueStateMachine:
         session.raw_transcript = transcript
         session.channel = request.channel
 
+        from app.parsers.transcript_repair import TranscriptRepairService
+        repaired_transcript, repairs = TranscriptRepairService.repair(transcript)
+
         # 1. Deterministic Number Parser
-        amount_res = parse_amount(transcript)
+        amount_res = parse_amount(repaired_transcript)
 
         # 2. Payee Resolver
-        payee_res = PayeeResolver.resolve_for_account(db, account.id, transcript)
+        payee_res = PayeeResolver.resolve_for_account(db, account.id, repaired_transcript)
 
         # 3. Consensus Cross-Check
-        cross_res = self.cross_check_engine.reconcile(transcript, amount_res, payee_res)
+        cross_res = self.cross_check_engine.reconcile(repaired_transcript, amount_res, payee_res)
 
         # Log decision event (Zero audio, zero PIN)
         self._record_audit_event(
@@ -200,6 +205,7 @@ class DialogueStateMachine:
                 "cross_status": cross_res.status.value,
                 "amount_parsed": amount_res.amount,
                 "payee_status": payee_res.status.value,
+                "repairs_count": len(repairs),
             },
         )
 
@@ -226,20 +232,28 @@ class DialogueStateMachine:
 
         if cross_res.status == CrossCheckStatus.AMOUNT_MISMATCH or amount_res.status != ParseStatus.SUCCESS:
             session.current_state = DialogueState.CLARIFY_AMOUNT.value
+            if payee_res.status == PayeeResolutionStatus.MATCHED and payee_res.selected_contact:
+                session.pending_payee_name = payee_res.selected_contact.contact_name
+                session.pending_payee_id = payee_res.selected_contact.contact_id
             db.commit()
+            prompt = cross_res.explanation if cross_res.status == CrossCheckStatus.AMOUNT_MISMATCH else (
+                "I'm not certain about the amount. Could you please specify the exact amount in rupees?"
+            )
             return TurnResponse(
                 session_id=session.id,
                 state=DialogueState.CLARIFY_AMOUNT,
-                prompt_text="I'm not certain about the amount. Could you please specify the exact amount in rupees?",
+                prompt_text=prompt,
             )
 
         if (
             cross_res.status in (CrossCheckStatus.PAYEE_MISMATCH, CrossCheckStatus.AMBIGUOUS_PAYEE)
             or payee_res.status != PayeeResolutionStatus.MATCHED
         ):
+            if amount_res.status == ParseStatus.SUCCESS and amount_res.amount:
+                session.pending_amount = float(amount_res.amount)
             session.current_state = DialogueState.CLARIFY_PAYEE.value
             db.commit()
-            prompt = payee_res.explanation or "Which beneficiary would you like to pay?"
+            prompt = payee_res.explanation or "Who would you like to pay? Please specify the beneficiary payee."
             return TurnResponse(
                 session_id=session.id,
                 state=DialogueState.CLARIFY_PAYEE,
@@ -282,6 +296,14 @@ class DialogueStateMachine:
         current_state: DialogueState,
     ) -> TurnResponse:
         """Processes customer clarification input for amount or payee."""
+        if request.action in (DialogueAction.SUBMIT_PIN, DialogueAction.SUBMIT_LIVENESS, DialogueAction.CONFIRM_READBACK):
+            return TurnResponse(
+                session_id=session.id,
+                state=DialogueState.FAILED,
+                prompt_text="Out of order action. Cannot submit PIN, liveness, or confirmation during clarification.",
+                error="INVALID_TRANSITION",
+            )
+
         clarification_text = (request.transcript or "").strip()
 
         if not clarification_text:
@@ -291,15 +313,26 @@ class DialogueStateMachine:
                 prompt_text="Please provide the clarification to proceed, or say cancel.",
             )
 
-        combined_query = f"{session.raw_transcript} {clarification_text}"
+        from app.parsers.transcript_repair import TranscriptRepairService
+        repaired_clarification, _ = TranscriptRepairService.repair(clarification_text)
+        combined_query = f"{session.raw_transcript} {repaired_clarification}"
 
-        amount_res = parse_amount(clarification_text)
+        amount_res = parse_amount(repaired_clarification)
         if amount_res.status != ParseStatus.SUCCESS:
             amount_res = parse_amount(combined_query)
+        if amount_res.status != ParseStatus.SUCCESS and session.pending_amount:
+            amount_res = ParsedAmountResult(
+                status=ParseStatus.SUCCESS,
+                amount=int(session.pending_amount),
+                is_within_limit=session.pending_amount <= 10000.0,
+                limit_exceeded=session.pending_amount > 10000.0,
+            )
 
-        payee_res = PayeeResolver.resolve_for_account(db, account.id, clarification_text)
+        payee_res = PayeeResolver.resolve_for_account(db, account.id, repaired_clarification)
         if payee_res.status != PayeeResolutionStatus.MATCHED:
             payee_res = PayeeResolver.resolve_for_account(db, account.id, combined_query)
+        if payee_res.status != PayeeResolutionStatus.MATCHED and session.pending_payee_name:
+            payee_res = PayeeResolver.resolve_for_account(db, account.id, session.pending_payee_name)
 
         cross_res = self.cross_check_engine.reconcile(combined_query, amount_res, payee_res)
 
@@ -342,16 +375,31 @@ class DialogueStateMachine:
         request: TurnRequest,
     ) -> TurnResponse:
         """Requires explicit confirmation before generating liveness challenge."""
-        transcript_clean = (request.transcript or "").strip().lower()
+        if request.action in (DialogueAction.SUBMIT_PIN, DialogueAction.SUBMIT_LIVENESS):
+            return TurnResponse(
+                session_id=session.id,
+                state=DialogueState.FAILED,
+                prompt_text="Out of order action. Cannot submit PIN or liveness before confirming payment details.",
+                error="INVALID_TRANSITION",
+            )
 
-        # Check for explicit affirmative action or tokens
-        is_confirmed = (
-            request.action == DialogueAction.CONFIRM_READBACK
-            or any(w in transcript_clean for w in ["confirm", "yes", "proceed", "haan", "bhejo", "kar do"])
-        )
+        # Check for explicit affirmative action or parsed intent
+        is_confirmed = False
+        is_ambiguous = False
+
+        if request.action == DialogueAction.CONFIRM_READBACK:
+            is_confirmed = True
+        elif request.transcript:
+            intent_res = parse_confirmation_intent(request.transcript)
+            if intent_res.intent == ConfirmationIntent.CONFIRM:
+                is_confirmed = True
+            elif intent_res.intent == ConfirmationIntent.CANCEL:
+                return self._handle_cancellation(db, session, account)
+            elif intent_res.intent == ConfirmationIntent.AMBIGUOUS:
+                is_ambiguous = True
 
         if not is_confirmed:
-            # Silence or non-affirmative speech does not advance state
+            # Silence, ambiguity, or non-affirmative speech does not advance state
             words = amount_to_words(int(session.pending_amount or 0))
             readback_card = ReadbackCardData(
                 amount_digits=int(session.pending_amount or 0),
@@ -359,10 +407,15 @@ class DialogueStateMachine:
                 payee_name=session.pending_payee_name or "",
                 payee_id=session.pending_payee_id,
             )
+            prompt = (
+                "I couldn't tell if you wanted to confirm or cancel. Please clearly say 'Confirm' or 'Cancel'."
+                if is_ambiguous
+                else "I did not hear a clear confirmation. Please say 'Confirm' or 'Cancel' to proceed."
+            )
             return TurnResponse(
                 session_id=session.id,
                 state=DialogueState.READBACK,
-                prompt_text="I did not hear a confirmation. Please say confirm or click the Confirm button to proceed.",
+                prompt_text=prompt,
                 readback_card=readback_card,
             )
 
@@ -396,7 +449,22 @@ class DialogueStateMachine:
         request: TurnRequest,
     ) -> TurnResponse:
         """Verifies challenge response and acoustic anti-spoof telemetry."""
-        if request.action != DialogueAction.SUBMIT_LIVENESS:
+        if request.action == DialogueAction.SUBMIT_PIN:
+            return TurnResponse(
+                session_id=session.id,
+                state=DialogueState.FAILED,
+                prompt_text="Out of order action. Cannot submit PIN before completing liveness verification.",
+                error="INVALID_TRANSITION",
+            )
+
+        # 0. Check for spoken cancellation
+        if request.transcript:
+            intent_res = parse_confirmation_intent(request.transcript)
+            if intent_res.intent == ConfirmationIntent.CANCEL:
+                return self._handle_cancellation(db, session, account)
+
+        response_digits = request.liveness_response or request.transcript
+        if not response_digits or not str(response_digits).strip():
             return TurnResponse(
                 session_id=session.id,
                 state=DialogueState.LIVENESS,
@@ -408,7 +476,7 @@ class DialogueStateMachine:
         liv_res = verify_liveness_challenge(
             session=session,
             account_id=account.id,
-            response_digits=request.liveness_response,
+            response_digits=str(response_digits),
             channel=request.channel,
         )
 
@@ -486,8 +554,13 @@ class DialogueStateMachine:
         account: Account,
         request: TurnRequest,
     ) -> TurnResponse:
-        """Verifies customer PIN against salted hash with 3-attempt lockout."""
-        if request.action != DialogueAction.SUBMIT_PIN or not request.pin:
+        """Verifies customer PIN against salted hash with 3-attempt lockout (manual 4-digit entry)."""
+        if request.action == DialogueAction.CANCEL:
+            return self._handle_cancellation(db, session, account)
+
+        pin_to_verify = request.pin
+
+        if request.action != DialogueAction.SUBMIT_PIN or not pin_to_verify:
             return TurnResponse(
                 session_id=session.id,
                 state=DialogueState.STEP_UP_PIN,
@@ -496,7 +569,17 @@ class DialogueStateMachine:
                 error="PIN_REQUIRED",
             )
 
-        pin_res = PinSecurityManager.verify_pin(session, account, request.pin, db)
+        if len(pin_to_verify) != 4 or not pin_to_verify.isdigit():
+            return TurnResponse(
+                session_id=session.id,
+                state=DialogueState.STEP_UP_PIN,
+                requires_pin=True,
+                prompt_text="Please enter exactly 4 numeric digits for your PIN.",
+                error="INVALID_PIN_FORMAT",
+            )
+
+        pin_res = PinSecurityManager.verify_pin(session, account, pin_to_verify, db)
+        del pin_to_verify
 
         self._record_audit_event(
             db=db,
@@ -544,11 +627,50 @@ class DialogueStateMachine:
         amount = float(session.pending_amount or 0.0)
 
         # Resolve receiver account
-        receiver_id = "acc_ramesh"
+        receiver_id = None
+        contact = None
         if session.pending_payee_id:
             contact = db.query(Contact).filter(Contact.id == session.pending_payee_id).first()
-            if contact and contact.beneficiary_account_id:
+            if not contact:
+                contact = db.query(Contact).filter(
+                    Contact.account_id == account.id,
+                    (Contact.beneficiary_account_id == session.pending_payee_id) |
+                    (Contact.contact_name == session.pending_payee_name)
+                ).first()
+
+        if not contact and session.pending_payee_name:
+            contact = db.query(Contact).filter(
+                Contact.account_id == account.id,
+                Contact.contact_name == session.pending_payee_name
+            ).first()
+
+        if contact:
+            if contact.beneficiary_account_id:
                 receiver_id = contact.beneficiary_account_id
+            else:
+                session.current_state = DialogueState.FAILED.value
+                db.commit()
+                return TurnResponse(
+                    session_id=session.id,
+                    state=DialogueState.FAILED,
+                    prompt_text=f"Payment failed: {contact.contact_name} does not have a linked bank account number for transfers.",
+                    error="BENEFICIARY_ACCOUNT_MISSING",
+                )
+
+        if not receiver_id and session.pending_payee_id:
+            direct_acc = db.query(Account).filter(Account.id == session.pending_payee_id).first()
+            if direct_acc:
+                receiver_id = direct_acc.id
+
+        if not receiver_id:
+            session.current_state = DialogueState.FAILED.value
+            db.commit()
+            return TurnResponse(
+                session_id=session.id,
+                state=DialogueState.FAILED,
+                prompt_text="Payment failed: Recipient account could not be resolved.",
+                error="RECEIVER_ACCOUNT_NOT_FOUND",
+            )
 
         tx_key = idempotency_key or session.idempotency_key or f"tx_{uuid.uuid4().hex[:12]}"
         session.idempotency_key = tx_key
@@ -666,21 +788,39 @@ class DialogueStateMachine:
         uncertain_field: Optional[str],
         user_note: str,
     ) -> TurnResponse:
-        handoff_case = HandoffCase(
-            id=f"case_{uuid.uuid4().hex[:12]}",
-            session_id=session.id,
-            account_id=account.id,
-            escalation_reason=reason,
-            uncertain_field=uncertain_field,
-            context_data=json.dumps({
-                "raw_transcript": session.raw_transcript,
-                "pending_amount": float(session.pending_amount) if session.pending_amount else None,
-                "pending_payee_name": session.pending_payee_name,
-                "note": user_note,
-            }, default=str),
-            status="PENDING",
-        )
-        db.add(handoff_case)
+        existing_case = db.query(HandoffCase).filter(
+            HandoffCase.session_id == session.id,
+            HandoffCase.status.in_(["PENDING", "WAITING", "AGENT_CONNECTED"]),
+        ).first()
+
+        if existing_case:
+            handoff_case = existing_case
+            try:
+                ctx = json.loads(handoff_case.context_data or "{}")
+                if user_note:
+                    ctx["note"] = user_note
+                if session.raw_transcript:
+                    ctx["raw_transcript"] = session.raw_transcript
+                handoff_case.context_data = json.dumps(ctx, default=str)
+            except Exception:
+                pass
+        else:
+            handoff_case = HandoffCase(
+                id=f"case_{uuid.uuid4().hex[:12]}",
+                session_id=session.id,
+                account_id=account.id,
+                escalation_reason=reason,
+                uncertain_field=uncertain_field,
+                context_data=json.dumps({
+                    "raw_transcript": session.raw_transcript,
+                    "pending_amount": float(session.pending_amount) if session.pending_amount else None,
+                    "pending_payee_name": session.pending_payee_name,
+                    "note": user_note,
+                }, default=str),
+                status="PENDING",
+            )
+            db.add(handoff_case)
+
         session.current_state = DialogueState.HANDOFF.value
         db.commit()
 
@@ -692,11 +832,12 @@ class DialogueStateMachine:
             details={"case_id": handoff_case.id, "reason": reason},
         )
 
+        prompt = user_note if (user_note and "escalated to a human banking agent" in user_note) else "Your payment has been escalated to a human banking agent for manual review."
         return TurnResponse(
             session_id=session.id,
             state=DialogueState.HANDOFF,
             handoff_case_id=handoff_case.id,
-            prompt_text="Your payment has been escalated to a human banking agent for manual review.",
+            prompt_text=prompt,
             context={"case_id": handoff_case.id, "reason": reason},
         )
 

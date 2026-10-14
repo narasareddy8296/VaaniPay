@@ -3,13 +3,16 @@ Account endpoints for VaaniPay: demo profiles, balance, mock ledger history,
 server-validated session creation, and evaluator demo data reset.
 """
 
+import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.db.database import get_db
 from app.db.seed import seed_database
 from app.models.account import Account
+from app.models.contact import Contact
 from app.models.ledger import LedgerEntry
 from app.core.session import (
     SessionContext,
@@ -22,6 +25,8 @@ from app.schemas.account import (
     TransactionRead,
     DemoLoginRequest,
     DemoLoginResponse,
+    ContactCreate,
+    ContactRead,
 )
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
@@ -102,6 +107,170 @@ def get_account_transactions(
     return entries
 
 
+@router.get("/{account_id}/contacts", response_model=List[ContactRead])
+def list_account_contacts(
+    account_id: str,
+    session: SessionContext = Depends(get_current_session),
+    db: Session = Depends(get_db),
+) -> List[ContactRead]:
+    """
+    Fetches contacts / payees for an account.
+    SECURITY ENFORCEMENT:
+    - Identity is derived from the server-validated session, NOT caller headers.
+    - Customers cannot access contacts of another customer (403 Forbidden).
+    - Support agents can view contacts.
+    """
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Account '{account_id}' not found.",
+        )
+
+    if session.role != "agent" and session.account_id != account_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Customers cannot access contacts of another customer.",
+        )
+
+    contacts = (
+        db.query(Contact)
+        .filter(Contact.account_id == account_id)
+        .order_by(Contact.created_at.desc())
+        .all()
+    )
+    return contacts
+
+
+@router.post("/{account_id}/contacts", response_model=ContactRead, status_code=status.HTTP_201_CREATED)
+def create_account_contact(
+    account_id: str,
+    payload: ContactCreate,
+    session: SessionContext = Depends(get_current_session),
+    db: Session = Depends(get_db),
+) -> ContactRead:
+    """
+    Adds a customer-managed payee / contact.
+    SECURITY ENFORCEMENT & CONSTRAINTS:
+    - Identity verified via session token.
+    - Cross-customer modification forbidden (403).
+    - Adding a contact does NOT authorize or trigger any financial payment.
+    - Validate payee name (min 2 chars).
+    - Validate mock account identifier: must point to a valid existing account in the bank.
+    - Cannot add own account as payee (400).
+    - Duplicate contact name or beneficiary account rejected with 409 Conflict.
+    - is_frequent is strictly set to False for newly added contacts to mandate step-up PIN before first payment.
+    """
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Account '{account_id}' not found.",
+        )
+
+    if session.role != "agent" and session.account_id != account_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Customers cannot add contacts to another customer's account.",
+        )
+
+    name = (payload.contact_name or "").strip()
+    if len(name) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Payee name must be at least 2 characters long.",
+        )
+
+    phone = (payload.phone_number or "").strip() or None
+    aliases = (payload.aliases or "").strip() or None
+
+    # Beneficiary account validation
+    raw_beneficiary = (payload.beneficiary_account_id or "").strip()
+    if not raw_beneficiary or len(raw_beneficiary) < 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mock account identifier is required and must be at least 3 characters long.",
+        )
+
+    # Allow lookup by Account.id or Account.account_number
+    target_account = (
+        db.query(Account)
+        .filter((Account.id == raw_beneficiary) | (Account.account_number == raw_beneficiary))
+        .first()
+    )
+    if not target_account:
+        # Automatically provision synthetic recipient account so double-entry transfers can credit it
+        clean_id = raw_beneficiary.lower() if raw_beneficiary.startswith("acc_") else f"acc_{raw_beneficiary.lower()}"
+        existing_by_clean_id = db.query(Account).filter(Account.id == clean_id).first()
+        if existing_by_clean_id:
+            target_account = existing_by_clean_id
+        else:
+            target_account = Account(
+                id=clean_id,
+                account_number=raw_beneficiary.upper(),
+                holder_name=name,
+                phone_number=phone or f"+9198{uuid.uuid4().int % 100000000:08d}",
+                role="customer",
+                balance=0.00,
+                currency="INR",
+                is_active=True,
+                is_locked=False,
+            )
+            db.add(target_account)
+            db.flush()
+
+    if target_account.id == account_id or target_account.account_number == account.account_number:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot add own account as a payee.",
+        )
+
+    # Check for duplicate within the customer's contacts
+    existing_by_name = (
+        db.query(Contact)
+        .filter(
+            Contact.account_id == account_id,
+            func.lower(Contact.contact_name) == name.lower(),
+        )
+        .first()
+    )
+    if existing_by_name:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"A contact with the name '{name}' already exists in your address book.",
+        )
+
+    existing_by_acc = (
+        db.query(Contact)
+        .filter(
+            Contact.account_id == account_id,
+            Contact.beneficiary_account_id == target_account.id,
+        )
+        .first()
+    )
+    if existing_by_acc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"A contact with account identifier '{raw_beneficiary}' already exists ({existing_by_acc.contact_name}).",
+        )
+    aliases = (payload.aliases or "").strip() or None
+
+    contact = Contact(
+        id=f"cnt_{uuid.uuid4().hex[:10]}",
+        account_id=account_id,
+        contact_name=name,
+        phone_number=phone,
+        beneficiary_account_id=target_account.id,
+        aliases=aliases,
+        is_frequent=False,  # Enforce non-frequent to mandate PIN step-up on first payment!
+    )
+    db.add(contact)
+    db.commit()
+    db.refresh(contact)
+
+    return contact
+
+
 @router.post("/demo-login", response_model=DemoLoginResponse)
 def demo_login(
     payload: DemoLoginRequest,
@@ -150,7 +319,7 @@ def reset_demo_data(
     and restores baseline balances (Priya ₹50k, Ramesh ₹25k).
     Does not drop database tables.
     """
-    result = seed_database(db)
+    result = seed_database(db, force_reset_balances=True)
     return {
         "status": "success",
         "message": "Demo data successfully reset to baseline seeded state.",

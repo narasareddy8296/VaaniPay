@@ -53,43 +53,64 @@ CLARIFICATION_MIN_THRESHOLD = 60.0
 AMBIGUITY_SCORE_DELTA = 6.0  # Scores within 6 points of each other are considered ambiguous
 
 
+AMOUNT_CURRENCY_INTENT_PATTERN = re.compile(
+    r'\b(?:dedh|dhedh|derh|deydh|dadh|dhai|dhaai|dhaee|adhai|sawa|sava|sawwa|paune|pone|saade|sadhe|sade|'
+    r'डेढ़|डेढ|ढाई|ढा़ई|सवा|पौने|साढ़े|साढे|'
+    r'sau|so|sou|hundred|hazaar|hazar|hajar|hazaarr|hazarr|thousand|lakh|laakh|laak|lac|lacs|lakhs|laakhs|crore|crores|cr|k|'
+    r'सौ|हज़ार|हजार|लाख|करोड़|'
+    r'shunya|zero|ek|ik|one|do|two|teen|tin|three|chaar|char|four|paanch|panch|five|chhah|che|chhe|six|saat|sat|seven|aath|ath|eight|nau|no|nine|das|dus|ten|'
+    r'शून्य|एक|दो|तीन|चार|पाँच|पांच|छह|सात|आठ|नौ|दस|'
+    r'bees|pachees|tees|chaalees|pachaas|saath|sattar|assi|nabbe|बीस|पच्चीस|तीस|चालीस|पचास|'
+    r'rupees|rupaye|rupya|rupee|rs|inr|/-|रुपये|रुपए|रुपया|रु|'
+    r'send|pay|transfer|bhej|bhejo|de|do|karo|kardo|kar|kripya|please)\b|\b\d+(?:\.\d+)?\b',
+    re.IGNORECASE,
+)
+
+
+def _strip_amount_and_intent(s: str) -> str:
+    """Removes amount tokens, currency labels, and payment intent verbs from a name candidate."""
+    cleaned = AMOUNT_CURRENCY_INTENT_PATTERN.sub(' ', s)
+    return ' '.join(cleaned.split())
+
+
 def extract_candidate_payee_name(text: str) -> Optional[str]:
     """
     Extracts candidate payee name substring from raw input transcripts.
-    Handles English ('send to Ramesh', 'pay Ramesh') and Hinglish ('Ramesh ko paanch sau bhej do').
+    Disentangles amount phrases, currency tokens, and payment verbs from recipient names.
+    Handles English ('send to Ramesh', 'pay Ramesh') and Hinglish ('Ramesh ko ...', '... Ramesh ko bhej do').
     """
     if not text:
         return None
 
-    cleaned = text.strip()
+    from app.parsers.transcript_repair import TranscriptRepairService
+    repaired, _ = TranscriptRepairService.repair(text)
+    cleaned = repaired.strip()
 
-    # Pattern 1: Hinglish '<name> ko ...' (e.g. 'Ramesh ko paanch sau rupaye bhej do')
-    m_ko = re.search(r'^(?:please\s+)?(.*?)\s+ko\b', cleaned, re.IGNORECASE)
+    # Pattern 1: Hinglish '<name> ko ...' or '<amount> <name> ko ...'
+    m_ko = re.search(r'^(?:please\s+|kripya\s+)?(.*?)\s+ko\b', cleaned, re.IGNORECASE)
     if m_ko:
-        cand = m_ko.group(1).strip()
-        # Clean off common noise prefixes
-        cand = re.sub(r'^(?:send|pay|transfer|kripya)\s+', '', cand, flags=re.IGNORECASE).strip()
+        cand = _strip_amount_and_intent(m_ko.group(1))
         if cand:
             return cand
 
     # Pattern 2: English '... to <name>' (e.g. 'send 500 to Ramesh', 'transfer 1500 to Priya Sharma')
-    m_to = re.search(r'\bto\s+([a-zA-Z\s\.\'-]+?)(?:\s+(?:rupees|inr|rs|\d|immediately|now))?$', cleaned, re.IGNORECASE)
+    m_to = re.search(r'\bto\s+([a-zA-Z\s\.\'\u0900-\u097F-]+?)(?:\s+(?:rupees|rupaye|inr|rs|\d|immediately|now))?$', cleaned, re.IGNORECASE)
     if m_to:
-        cand = m_to.group(1).strip()
+        cand = _strip_amount_and_intent(m_to.group(1))
         if cand:
             return cand
 
     # Pattern 3: English 'pay <name> <amount>'
-    m_pay = re.search(r'\b(?:pay|send|transfer)\s+([a-zA-Z\s\.\'-]+?)\s+(?:\d+|paanch|dedh|dhai|two)', cleaned, re.IGNORECASE)
+    m_pay = re.search(r'\b(?:pay|send|transfer)\s+([a-zA-Z\s\.\'\u0900-\u097F-]+?)\s+(?:\d+|paanch|dedh|dhai|two|one|three)', cleaned, re.IGNORECASE)
     if m_pay:
-        cand = m_pay.group(1).strip()
+        cand = _strip_amount_and_intent(m_pay.group(1))
         if cand:
             return cand
 
-    # If short string without verbs, treat entire string as name candidate
-    words = cleaned.split()
-    if len(words) <= 3 and not any(w in cleaned.lower() for w in ["rupees", "rupaye", "transfer", "bhej"]):
-        return cleaned
+    # Fallback for standalone names (e.g. in CLARIFY_PAYEE response "Ramesh" or "Priya Sharma")
+    cand = _strip_amount_and_intent(cleaned)
+    if cand and len(cand.split()) <= 4:
+        return cand
 
     return None
 
@@ -117,7 +138,14 @@ class PayeeResolver:
             )
 
         extracted_name = extract_candidate_payee_name(query)
-        target_name = (extracted_name if extracted_name else query).strip().lower()
+        if not extracted_name:
+            return PayeeResolutionResult(
+                status=PayeeResolutionStatus.NOT_FOUND,
+                raw_query=query,
+                extracted_name=None,
+                explanation="Who would you like to pay? Please specify the beneficiary payee.",
+            )
+        target_name = extracted_name.strip().lower()
 
         if not contacts:
             return PayeeResolutionResult(
@@ -144,12 +172,21 @@ class PayeeResolver:
 
             for name_variant in names_to_check:
                 v_clean = name_variant.lower()
-                # Compute fuzzy similarity metrics
-                r = fuzz.ratio(target_name, v_clean)
-                ts = fuzz.token_sort_ratio(target_name, v_clean)
-                tset = fuzz.token_set_ratio(target_name, v_clean)
-                # Word-based token sort vs direct ratio
-                current_score = max(r, ts, (tset if len(target_name) > 3 else r))
+                if target_name == v_clean:
+                    current_score = 100.0
+                else:
+                    # Compute fuzzy similarity metrics
+                    r = fuzz.ratio(target_name, v_clean)
+                    ts = fuzz.token_sort_ratio(target_name, v_clean)
+                    tset = fuzz.token_set_ratio(target_name, v_clean)
+                    target_words = set(target_name.split())
+                    variant_words = set(v_clean.split())
+                    if len(target_words) > len(variant_words) and variant_words:
+                        overlap = len(target_words & variant_words) / len(target_words)
+                        tset_effective = tset * overlap
+                    else:
+                        tset_effective = tset
+                    current_score = max(r, ts, (tset_effective if len(target_name) > 3 else r))
 
                 if current_score > best_score:
                     best_score = current_score

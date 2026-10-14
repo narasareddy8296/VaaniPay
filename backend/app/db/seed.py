@@ -7,9 +7,11 @@ Designed to be strictly idempotent: running multiple times never duplicates reco
 import hashlib
 from typing import Dict, Any
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.db.database import SessionLocal, Base, engine
 from app.models.account import Account
 from app.models.contact import Contact
+from app.models.ledger import LedgerEntry
 
 
 def _hash_demo_pin(pin: str) -> str:
@@ -50,6 +52,16 @@ DEMO_ACCOUNTS = [
         "balance": 0.00,
         "currency": "INR",
     },
+    {
+        "id": "acc_abhishek",
+        "account_number": "ACC_ABHISHEK_003",
+        "holder_name": "Abhishek Verma",
+        "phone_number": "+919876543215",
+        "role": "customer",
+        "pin": "1234",
+        "balance": 15000.00,
+        "currency": "INR",
+    },
 ]
 
 # Contacts for Priya Sharma
@@ -78,6 +90,14 @@ PRIYA_CONTACTS = [
         "aliases": "Neha,Neha Di",
         "is_frequent": True,
     },
+    {
+        "id": "cnt_priya_abhishek",
+        "contact_name": "Abhishek Verma",
+        "phone_number": "+919876543215",
+        "beneficiary_account_id": "acc_abhishek",
+        "aliases": "Abhishek,Abhishekk,Abhi",
+        "is_frequent": True,
+    },
 ]
 
 # Contacts for Ramesh Kumar
@@ -101,10 +121,12 @@ RAMESH_CONTACTS = [
 ]
 
 
-def seed_database(db: Session) -> Dict[str, Any]:
+def seed_database(db: Session, force_reset_balances: bool = False) -> Dict[str, Any]:
     """
     Idempotent seed operation.
     Upserts accounts and contacts without generating duplicate records.
+    When force_reset_balances is False (default), existing account balances are preserved
+    and reconciled against posted ledger entries to maintain balance consistency.
     """
     accounts_seeded = 0
     contacts_seeded = 0
@@ -123,11 +145,40 @@ def seed_database(db: Session) -> Dict[str, Any]:
             # Idempotent update of non-destructive attributes
             existing_account.holder_name = acc_data["holder_name"]
             existing_account.role = acc_data["role"]
-            existing_account.balance = acc_data["balance"]
             existing_account.currency = acc_data["currency"]
             existing_account.hashed_pin = _hash_demo_pin(acc_data["pin"])
             existing_account.is_active = True
             existing_account.is_locked = False
+
+            if force_reset_balances:
+                existing_account.balance = acc_data["balance"]
+                db.query(LedgerEntry).filter(LedgerEntry.account_id == existing_account.id).delete()
+            else:
+                # Reconcile balance against posted double-entry ledger movements
+                debit_sum = (
+                    db.query(func.coalesce(func.sum(LedgerEntry.amount), 0.0))
+                    .filter(
+                        LedgerEntry.account_id == existing_account.id,
+                        LedgerEntry.entry_type == "DEBIT",
+                        LedgerEntry.status == "POSTED",
+                    )
+                    .scalar()
+                )
+                credit_sum = (
+                    db.query(func.coalesce(func.sum(LedgerEntry.amount), 0.0))
+                    .filter(
+                        LedgerEntry.account_id == existing_account.id,
+                        LedgerEntry.entry_type == "CREDIT",
+                        LedgerEntry.status == "POSTED",
+                    )
+                    .scalar()
+                )
+                if debit_sum > 0 or credit_sum > 0:
+                    base_balance = acc_data["balance"]
+                    reconciled = float(base_balance) + float(credit_sum) - float(debit_sum)
+                    existing_account.balance = reconciled
+                elif existing_account.balance is None:
+                    existing_account.balance = acc_data["balance"]
         else:
             new_account = Account(
                 id=acc_data["id"],

@@ -14,6 +14,8 @@ from app.schemas.handoff import (
     HandoffAction,
     HandoffCaseStatus,
     HandoffCaseRead,
+    HandoffMessageCreate,
+    HandoffMessageRead,
     HandoffResolveRequest,
     HandoffResolveResponse,
 )
@@ -31,6 +33,8 @@ __all__ = [
     "HandoffAction",
     "HandoffCaseStatus",
     "HandoffCaseRead",
+    "HandoffMessageCreate",
+    "HandoffMessageRead",
     "HandoffResolveRequest",
     "HandoffResolveResponse",
 ]

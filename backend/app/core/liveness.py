@@ -5,6 +5,7 @@ Prevents audio replay attacks while maintaining data privacy.
 """
 
 import hashlib
+import re
 import secrets
 from datetime import datetime, timedelta
 from enum import Enum
@@ -14,6 +15,37 @@ from app.core.config import get_settings
 from app.models.session import PaymentSession
 
 LIVENESS_SALT = "vaanipay_liveness_salt_2026"
+
+SPOKEN_DIGIT_MAP = {
+    "zero": "0", "shunya": "0",
+    "one": "1", "ek": "1",
+    "two": "2", "do": "2",
+    "three": "3", "teen": "3", "tin": "3",
+    "four": "4", "chaar": "4", "char": "4",
+    "five": "5", "paanch": "5", "panch": "5",
+    "six": "6", "chhah": "6", "che": "6", "chhe": "6",
+    "seven": "7", "saat": "7", "sat": "7",
+    "eight": "8", "aath": "8", "ath": "8",
+    "nine": "9", "nau": "9", "no": "9",
+}
+
+
+def normalize_liveness_digits(text: Optional[str]) -> str:
+    """Extracts numeric digits or converts spoken digit words into consecutive digits."""
+    if not text:
+        return ""
+    # Extract any explicit digits
+    digits_found = [c for c in text if c.isdigit()]
+    if digits_found:
+        return "".join(digits_found)
+
+    # Convert spoken number words
+    words = re.findall(r"\b\w+\b", text.lower())
+    converted = [SPOKEN_DIGIT_MAP[w] for w in words if w in SPOKEN_DIGIT_MAP]
+    if converted:
+        return "".join(converted)
+
+    return "".join(text.split())
 
 
 class LivenessStatus(str, Enum):
@@ -135,7 +167,7 @@ def verify_liveness_challenge(
     session.liveness_challenge = None
 
     # Compute expected hash from customer response
-    response_clean = "".join(response_digits.split())
+    response_clean = normalize_liveness_digits(response_digits)
     candidate_hash = _hash_challenge(session.id, account_id, response_clean)
 
     if candidate_hash != stored_hash:

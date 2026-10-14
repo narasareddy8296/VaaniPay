@@ -41,60 +41,70 @@ class ParsedAmountResult(BaseModel):
 
 HINDI_ENGLISH_NUMBERS = {
     # 0 - 9
-    "shunya": 0, "zero": 0,
-    "ek": 1, "one": 1,
-    "do": 2, "two": 2,
-    "teen": 3, "tin": 3, "three": 3,
-    "chaar": 4, "char": 4, "four": 4,
-    "paanch": 5, "panch": 5, "five": 5,
-    "chhah": 6, "che": 6, "chhe": 6, "six": 6,
-    "saat": 7, "sat": 7, "seven": 7,
-    "aath": 8, "ath": 8, "eight": 8,
-    "nau": 9, "no": 9, "nine": 9,
+    "shunya": 0, "zero": 0, "शून्य": 0,
+    "ek": 1, "ik": 1, "one": 1, "एक": 1,
+    "do": 2, "two": 2, "दो": 2,
+    "teen": 3, "tin": 3, "three": 3, "तीन": 3,
+    "chaar": 4, "char": 4, "four": 4, "चार": 4,
+    "paanch": 5, "panch": 5, "five": 5, "पाँच": 5, "पांच": 5,
+    "chhah": 6, "che": 6, "chhe": 6, "six": 6, "छह": 6, "छः": 6,
+    "saat": 7, "sat": 7, "seven": 7, "सात": 7,
+    "aath": 8, "ath": 8, "eight": 8, "आठ": 8,
+    "nau": 9, "no": 9, "nine": 9, "नौ": 9,
     # 10 - 19
-    "das": 10, "dus": 10, "ten": 10,
-    "gyarah": 11, "gyara": 11, "eleven": 11,
-    "baarah": 12, "bara": 12, "twelve": 12,
-    "terah": 13, "tera": 13, "thirteen": 13,
-    "chaudah": 14, "chouda": 14, "fourteen": 14,
-    "pandrah": 15, "pandra": 15, "fifteen": 15,
-    "solah": 16, "sola": 16, "sixteen": 16,
-    "satrah": 17, "satra": 17, "seventeen": 17,
-    "atharah": 18, "athara": 18, "eighteen": 18,
-    "unnees": 19, "unnis": 19, "nineteen": 19,
+    "das": 10, "dus": 10, "ten": 10, "दस": 10,
+    "gyarah": 11, "gyara": 11, "eleven": 11, "ग्यारह": 11,
+    "baarah": 12, "bara": 12, "twelve": 12, "बारह": 12,
+    "terah": 13, "tera": 13, "thirteen": 13, "तेरह": 13,
+    "chaudah": 14, "chouda": 14, "fourteen": 14, "चौदह": 14,
+    "pandrah": 15, "pandra": 15, "fifteen": 15, "पंद्रह": 15,
+    "solah": 16, "sola": 16, "sixteen": 16, "सोलह": 16,
+    "satrah": 17, "satra": 17, "seventeen": 17, "सत्रह": 17,
+    "atharah": 18, "athara": 18, "eighteen": 18, "अट्ठारह": 18,
+    "unnees": 19, "unnis": 19, "nineteen": 19, "उन्नीस": 19,
     # 20 - 90
-    "bees": 20, "bis": 20, "twenty": 20,
-    "pachees": 25, "pachis": 25, "twenty five": 25, "twenty-five": 25,
-    "tees": 30, "tis": 30, "thirty": 30,
-    "chaalees": 40, "chalis": 40, "forty": 40,
-    "pachaas": 50, "pachas": 50, "fifty": 50,
-    "saath": 60, "sath": 60, "sixty": 60,
-    "sattar": 70, "seventy": 70,
-    "assi": 80, "eighty": 80,
-    "nabbe": 90, "navve": 90, "ninety": 90,
+    "bees": 20, "bis": 20, "twenty": 20, "बीस": 20,
+    "pachees": 25, "pachis": 25, "twenty five": 25, "twenty-five": 25, "पच्चीस": 25,
+    "tees": 30, "tis": 30, "thirty": 30, "तीस": 30,
+    "chaalees": 40, "chalis": 40, "forty": 40, "चालीस": 40,
+    "pachaas": 50, "pachas": 50, "fifty": 50, "पचास": 50,
+    "saath": 60, "sath": 60, "sixty": 60, "साठ": 60,
+    "sattar": 70, "seventy": 70, "सत्तर": 70,
+    "assi": 80, "eighty": 80, "अस्सी": 80,
+    "nabbe": 90, "navve": 90, "ninety": 90, "नब्बे": 90,
 }
 
 MULTIPLIERS = {
-    "sau": 100, "so": 100, "sou": 100, "hundred": 100,
-    "hazaar": 1000, "hazar": 1000, "hajar": 1000, "thousand": 1000, "k": 1000,
-    "lakh": 100000, "lac": 100000, "lakhs": 100000, "lacs": 100000,
-    "crore": 10000000, "cr": 10000000, "crores": 10000000,
+    "sau": 100, "so": 100, "sou": 100, "hundred": 100, "सौ": 100,
+    "hazaar": 1000, "hazar": 1000, "hajar": 1000, "hazaarr": 1000, "hazarr": 1000, "hazaari": 1000, "thousand": 1000, "k": 1000, "हज़ार": 1000, "हजार": 1000,
+    "lakh": 100000, "laakh": 100000, "laak": 100000, "lac": 100000, "lakhs": 100000, "laakhs": 100000, "lacs": 100000, "लाख": 100000,
+    "crore": 10000000, "cr": 10000000, "crores": 10000000, "करोड़": 10000000,
 }
+
+FRACTION_UNITS = r'(?:sau|so|hazaar|hazar|hajar|hazaarr|hazarr|thousand|lakh|laakh|laak|lac|lacs|lakhs|laakhs|crore|crores|cr|सौ|हज़ार|हजार|लाख|करोड़)'
+
+DEVANAGARI_DIGITS = str.maketrans('०१२३४५६७८९', '0123456789')
 
 
 def _clean_text(text: str) -> str:
-    """Standardizes input string: lowercases, strips punctuation, and normalizes currency tags."""
+    """Standardizes input string: applies deterministic transcript repair, converts Devanagari numerals, and normalizes currency."""
     if not text:
         return ""
+    from app.parsers.transcript_repair import TranscriptRepairService
+    repaired, _ = TranscriptRepairService.repair(text)
+    # Translate Devanagari numerals to standard digits (० -> 0, etc.)
+    s = repaired.translate(DEVANAGARI_DIGITS)
     # Normalize unicode symbols (e.g. ₹ to ' rs ')
-    s = text.replace("₹", " rs ")
+    s = s.replace("₹", " rs ")
+    s = re.sub(r'\b(?:रुपये|रुपए|रुपया|रुपयी|रु)\b', ' rs ', s)
     s = s.lower()
     # Strip commas inside numbers (e.g. 1,500 -> 1500)
     s = re.sub(r'(?<=\d),(?=\d)', '', s)
     # Mask Indian mobile phone numbers (10 digits starting with 6-9) so they don't get parsed as amounts
     s = re.sub(r'\b(?:\+91|91)?[6-9]\d{9}\b', ' [PHONE] ', s)
-    # Strip punctuation (keep hyphens and alphanumeric characters)
-    s = re.sub(r'[^\w\s\-]', ' ', s)
+    # Strip punctuation (keep hyphens, decimals between digits, alphanumeric, and Devanagari unicode range \u0900-\u097F)
+    s = re.sub(r'[^\w\s\-\.\u0900-\u097F]', ' ', s)
+    s = re.sub(r'(?<!\d)\.|\.(?!\d)', ' ', s)
     # Normalize whitespaces
     return " ".join(s.split())
 
@@ -214,19 +224,34 @@ class DeterministicNumberParser:
         # Identify text regions that are likely payee names to avoid extracting numbers from them
         payee_regions = []
         # In Hindi/Hinglish: phrase before 'ko' (e.g. 'ramesh 2 ko ...')
-        m_ko = re.search(r'^(.*?)\s+ko\b', text)
+        m_ko = re.search(r'^(?:please\s+|kripya\s+)?(.*?)\s+ko\b', text, re.IGNORECASE)
         if m_ko:
-            payee_regions.append(m_ko.group(1))
+            cand = re.sub(r'\b\d+(?:\.\d+)?\b', ' ', m_ko.group(1))
+            cand = re.sub(r'\b(?:rupee|rupay|rupaye|rupya|rs|inr|sau|hazaar|lakh|dedh|dhai|sawa)\b', ' ', cand, flags=re.IGNORECASE)
+            cand_clean = ' '.join(cand.split())
+            if cand_clean:
+                payee_regions.append(cand_clean)
         # In English: phrase after 'to' (e.g. '... to ramesh 2')
-        m_to = re.search(r'\bto\s+([a-zA-Z0-9_\s]+)$', text)
+        m_to = re.search(r'\bto\s+([a-zA-Z0-9_\s]+)$', text, re.IGNORECASE)
         if m_to:
-            payee_regions.append(m_to.group(1))
+            cand = re.sub(r'\b\d+(?:\.\d+)?\b', ' ', m_to.group(1))
+            cand_clean = ' '.join(cand.split())
+            if cand_clean:
+                payee_regions.append(cand_clean)
+
+        AMOUNT_MARKERS = [
+            "rupee", "rupay", "rupya", "rs", "inr",
+            "sau", "so", "hazaar", "hazar", "hajar", "thousand", "lakh", "lac", "crore", "hundred", "k",
+            "dedh", "dhedh", "derh", "dhai", "dhaai", "sawa", "sava", "paune", "pone", "saade", "sadhe",
+            "रुपये", "रुपए", "रुपया", "रु", "सौ", "हज़ार", "हजार", "लाख", "करोड़",
+            "डेढ़", "ढाई", "सवा", "पौने", "साढ़े",
+        ]
 
         # Helper to check if a phrase is inside an identified payee region
         def is_in_payee_region(phrase: str) -> bool:
             clean_phrase = phrase.strip()
-            # If the phrase has explicit currency or multiplier, it is definitely an amount, not a payee!
-            if any(k in clean_phrase for k in ["rupee", "rupay", "rs", "inr", "sau", "hazaar", "hazar", "lakh", "lac", "crore", "thousand", "hundred"]):
+            # If the candidate phrase is numeric, or has explicit currency, fraction, or multiplier, it is definitely an amount!
+            if re.match(r'^\d+(?:\.\d+)?$', clean_phrase) or any(k in clean_phrase for k in AMOUNT_MARKERS):
                 return False
             for pr in payee_regions:
                 if re.search(r'\b' + re.escape(clean_phrase) + r'\b', pr):
@@ -254,11 +279,7 @@ class DeterministicNumberParser:
                 continue
             
             # Check if candidate has strong amount markers
-            has_strong_marker = any(k in phrase_clean for k in [
-                "sau", "so", "hazaar", "hazar", "hajar", "thousand", "lakh", "lac", "crore",
-                "dedh", "dhai", "sawa", "paune", "saade",
-                "rupee", "rupay", "rs", "inr", "k"
-            ])
+            has_strong_marker = any(k in phrase_clean for k in AMOUNT_MARKERS)
             # Or if text immediately adjacent has transfer verb or currency
             pattern_adj = re.compile(
                 r'(?:send|pay|transfer|bhej|bhejo|₹|rs|inr)\s+' + re.escape(phrase_clean) +
@@ -276,10 +297,21 @@ class DeterministicNumberParser:
         else:
             candidates_to_use = strong_candidates if strong_candidates else weak_candidates
 
+        # Discard candidates that are strictly sub-phrases of a longer candidate
+        non_sub_candidates = []
+        for val, phrase in candidates_to_use:
+            is_sub = False
+            for other_val, other_phrase in candidates_to_use:
+                if phrase != other_phrase and phrase in other_phrase:
+                    is_sub = True
+                    break
+            if not is_sub:
+                non_sub_candidates.append((val, phrase))
+
         # Deduplicate while preserving order
         seen = set()
         unique_results = []
-        for val, phrase in candidates_to_use:
+        for val, phrase in non_sub_candidates:
             key = (val, phrase)
             if key not in seen:
                 seen.add(key)
@@ -288,81 +320,81 @@ class DeterministicNumberParser:
         return unique_results
 
     def _extract_fractional_amounts(self, text: str) -> List[Tuple[int, str]]:
-        """Parses colloquial Hindi fractional expressions."""
+        """Parses colloquial Hindi and Devanagari fractional expressions."""
         matches: List[Tuple[int, str]] = []
 
         # 1. Dedh (<unit>) -> 1.5 * unit (e.g. dedh sau = 150, dedh hazaar = 1500, dedh lakh = 150000)
         for m in re.finditer(
-            r'\b(?:dedh|dhedh|deydh|dadh)\s+(sau|so|hazaar|hazar|hajar|thousand|lakh|lac|crore)\b',
+            r'(?:^|\s)(?:dedh|dhedh|derh|deydh|dadh|डेढ़|डेढ)\s+(' + FRACTION_UNITS + r')(?:\s|$|[^\w\u0900-\u097F])',
             text,
         ):
             unit_str = m.group(1)
             unit_val = MULTIPLIERS.get(unit_str, 1000)
             amount = int(1.5 * unit_val)
-            matches.append((amount, m.group(0)))
+            matches.append((amount, m.group(0).strip()))
 
         # 2. Dhai (<unit>) -> 2.5 * unit (e.g. dhai sau = 250, dhai hazaar = 2500, dhai lakh = 250000)
         for m in re.finditer(
-            r'\b(?:dhai|dhaai|dhaee|adhai)\s+(sau|so|hazaar|hazar|hajar|thousand|lakh|lac|crore)\b',
+            r'(?:^|\s)(?:dhai|dhaai|dhaee|adhai|ढाई|ढा़ई)\s+(' + FRACTION_UNITS + r')(?:\s|$|[^\w\u0900-\u097F])',
             text,
         ):
             unit_str = m.group(1)
             unit_val = MULTIPLIERS.get(unit_str, 100)
             amount = int(2.5 * unit_val)
-            matches.append((amount, m.group(0)))
+            matches.append((amount, m.group(0).strip()))
 
         # 3. Sawa (<N> <unit>) -> (N + 0.25) * unit (e.g. sawa do lakh = 2.25 * 100,000 = 225,000)
         for m in re.finditer(
-            r'\b(?:sawa|sava|sawwa)\s+([a-zA-Z]+|\d+)\s+(sau|so|hazaar|hazar|hajar|thousand|lakh|lac|crore)\b',
+            r'(?:^|\s)(?:sawa|sava|sawwa|सवा)\s+([a-zA-Z\u0900-\u097F]+|\d+)\s+(' + FRACTION_UNITS + r')(?:\s|$|[^\w\u0900-\u097F])',
             text,
         ):
             num_val = _word_to_int(m.group(1))
             unit_val = MULTIPLIERS.get(m.group(2))
             if num_val is not None and unit_val is not None:
                 amount = int((num_val + 0.25) * unit_val)
-                matches.append((amount, m.group(0)))
+                matches.append((amount, m.group(0).strip()))
 
         # 3b. Standalone Sawa (<unit>) -> 1.25 * unit (e.g. sawa hazaar = 1250, sawa sau = 125)
         for m in re.finditer(
-            r'\b(?:sawa|sava|sawwa)\s+(sau|so|hazaar|hazar|hajar|thousand|lakh|lac|crore)\b',
+            r'(?:^|\s)(?:sawa|sava|sawwa|सवा)\s+(' + FRACTION_UNITS + r')(?:\s|$|[^\w\u0900-\u097F])',
             text,
         ):
             unit_val = MULTIPLIERS.get(m.group(1))
             if unit_val is not None:
                 amount = int(1.25 * unit_val)
-                matches.append((amount, m.group(0)))
+                matches.append((amount, m.group(0).strip()))
 
         # 4. Paune (<N> <unit>) -> (N - 0.25) * unit (e.g. paune teen hazaar = 2.75 * 1000 = 2750)
         for m in re.finditer(
-            r'\b(?:paune|pone|pawne|pawnay)\s+([a-zA-Z]+|\d+)\s+(sau|so|hazaar|hazar|hajar|thousand|lakh|lac|crore)\b',
+            r'(?:^|\s)(?:paune|pone|pawne|pawnay|पौने)\s+([a-zA-Z\u0900-\u097F]+|\d+)\s+(' + FRACTION_UNITS + r')(?:\s|$|[^\w\u0900-\u097F])',
             text,
         ):
             num_val = _word_to_int(m.group(1))
             unit_val = MULTIPLIERS.get(m.group(2))
             if num_val is not None and unit_val is not None:
                 amount = int((num_val - 0.25) * unit_val)
-                matches.append((amount, m.group(0)))
+                matches.append((amount, m.group(0).strip()))
 
         # 4b. Standalone Paune (<unit>) -> 0.75 * unit (e.g. paune hazaar = 750, paune sau = 75)
         for m in re.finditer(
-            r'\b(?:paune|pone|pawne|pawnay)\s+(sau|so|hazaar|hazar|hajar|thousand|lakh|lac|crore)\b',
+            r'(?:^|\s)(?:paune|pone|pawne|pawnay|पौने)\s+(' + FRACTION_UNITS + r')(?:\s|$|[^\w\u0900-\u097F])',
             text,
         ):
             unit_val = MULTIPLIERS.get(m.group(1))
             if unit_val is not None:
                 amount = int(0.75 * unit_val)
-                matches.append((amount, m.group(0)))
+                matches.append((amount, m.group(0).strip()))
 
         # 5. Saade (<N> <unit>) -> (N + 0.5) * unit (e.g. saade teen hazaar = 3500)
         for m in re.finditer(
-            r'\b(?:saade|sadhe|sade)\s+([a-zA-Z]+|\d+)\s+(sau|so|hazaar|hazar|hajar|thousand|lakh|lac|crore)\b',
+            r'(?:^|\s)(?:saade|sadhe|sade|साढ़े|साढे)\s+([a-zA-Z\u0900-\u097F]+|\d+)\s+(' + FRACTION_UNITS + r')(?:\s|$|[^\w\u0900-\u097F])',
             text,
         ):
             num_val = _word_to_int(m.group(1))
             unit_val = MULTIPLIERS.get(m.group(2))
             if num_val is not None and unit_val is not None:
                 amount = int((num_val + 0.5) * unit_val)
-                matches.append((amount, m.group(0)))
+                matches.append((amount, m.group(0).strip()))
 
         return matches
 
@@ -371,7 +403,7 @@ class DeterministicNumberParser:
         matches: List[Tuple[int, str]] = []
 
         # Replace auxiliary verb phrases where 'do' means 'give/send', not number 2
-        normalized_text = re.sub(r'\b(?:bhej|kar|de)\s+do\b', ' transfer ', text)
+        normalized_text = re.sub(r'\b(?:bhej|kar|de|भेज|कर|दे)\s+(?:do|दो)\b', ' transfer ', text)
 
         all_tokens = set(HINDI_ENGLISH_NUMBERS.keys()) | set(MULTIPLIERS.keys()) | {"and"}
         words = normalized_text.split()
@@ -383,6 +415,9 @@ class DeterministicNumberParser:
                 while i < len(words) and (words[i] in all_tokens or words[i].isdigit()):
                     i += 1
                 seq = words[start:i]
+                # If sequence is only a multiplier and previous token was a digit/decimal, skip (already handled by digit parser)
+                if len(seq) == 1 and seq[0] in MULTIPLIERS and start > 0 and re.match(r'^\d+(?:\.\d+)?$', words[start - 1]):
+                    continue
                 # Filter out pure digits without any word multiplier (pure digits handled by _extract_digit_amounts)
                 has_word_num = any(t in HINDI_ENGLISH_NUMBERS or t in MULTIPLIERS for t in seq)
                 if has_word_num:
@@ -390,7 +425,7 @@ class DeterministicNumberParser:
                     if parsed is not None and parsed > 0:
                         phrase = " ".join(seq)
                         # Don't add if already captured by fractional parser
-                        if not any(f in phrase for f in ["dedh", "dhai", "sawa", "paune", "saade"]):
+                        if not any(f in phrase for f in ["dedh", "dhai", "sawa", "paune", "saade", "डेढ़", "ढाई", "सवा", "पौने", "साढ़े"]):
                             matches.append((parsed, phrase))
             else:
                 i += 1
@@ -429,12 +464,12 @@ class DeterministicNumberParser:
         return total if has_number and total > 0 else None
 
     def _extract_digit_amounts(self, text: str) -> List[Tuple[int, str]]:
-        """Extracts direct numeric digits (e.g. '1500 rupees', '₹1,500', 'send 500 to Ramesh')."""
+        """Extracts direct numeric digits (e.g. '1500 rupees', '₹1,500', '1.5 lakh', 'send 500 to Ramesh')."""
         matches: List[Tuple[int, str]] = []
 
-        # Pattern: digits optionally followed by multiplier (with word boundary) or currency keywords
+        # Pattern: digits optionally decimal, followed by multiplier or currency keywords
         pattern = re.compile(
-            r'(?:(?:rs|inr)\s*)?(\b\d+)(?:(?:\s*|\b)(k\b|thousand|hazaar|hazar|lakh|lac|crore))?(?:\s*(?:rupees|rupaye|rupya|rs|inr|/-))?',
+            r'(?:(?:rs|inr)\s*)?(\b\d+(?:\.\d+)?)(?:(?:\s*|\b)(k\b|thousand|hazaar|hazar|lakh|lac|crore|सौ|हज़ार|हजार|लाख|करोड़))?(?:\s*(?:rupees|rupaye|rupya|rs|inr|/-|रुपये|रुपए|रु))?',
             re.IGNORECASE,
         )
 
@@ -442,16 +477,23 @@ class DeterministicNumberParser:
             digits_str = m.group(1)
             mult_str = m.group(2)
 
-            val = int(digits_str)
-            if mult_str:
-                mult_key = mult_str.lower()
-                val = val * MULTIPLIERS.get(mult_key, 1)
-
             # Avoid capturing phone numbers (10 digits) or years
             if len(digits_str) == 10 and digits_str.startswith(('6', '7', '8', '9')):
                 continue
 
-            matches.append((val, m.group(0)))
+            if "." in digits_str:
+                val = float(digits_str)
+            else:
+                val = int(digits_str)
+
+            if mult_str:
+                mult_key = mult_str.lower()
+                val = int(val * MULTIPLIERS.get(mult_key, 1))
+            else:
+                val = int(val)
+
+            if val >= 0:
+                matches.append((val, m.group(0).strip()))
 
         return matches
 

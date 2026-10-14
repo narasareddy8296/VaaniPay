@@ -1,7 +1,7 @@
-"""Human handoff and escalation queue models."""
+"""Human handoff, escalation queue, and two-way messaging models."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy import String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
@@ -42,7 +42,7 @@ class HandoffCase(Base):
         String(20),
         default="PENDING",
         nullable=False,
-        doc="'PENDING', 'APPROVED', 'REJECTED', 'REPEAT_REQUESTED'",
+        doc="'PENDING', 'WAITING', 'AGENT_CONNECTED', 'APPROVED', 'REJECTED', 'REPEAT_REQUESTED', 'CANCELLED'",
     )
     agent_id: Mapped[Optional[str]] = mapped_column(
         String(36),
@@ -70,4 +70,46 @@ class HandoffCase(Base):
     agent: Mapped[Optional["Account"]] = relationship(
         "Account",
         foreign_keys=[agent_id],
+    )
+    messages: Mapped[List["HandoffMessage"]] = relationship(
+        "HandoffMessage",
+        back_populates="case",
+        cascade="all, delete-orphan",
+        order_by="HandoffMessage.created_at",
+    )
+
+
+class HandoffMessage(Base):
+    """
+    Two-way chat message between customer and human banking agent.
+    Strictly forbids storing PINs, secrets, or raw audio.
+    """
+    __tablename__ = "handoff_messages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    case_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("handoff_cases.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    sender_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("accounts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    sender_role: Mapped[str] = mapped_column(String(20), nullable=False)  # "customer", "agent"
+    sender_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    message_text: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    # Relationships
+    case: Mapped["HandoffCase"] = relationship(
+        "HandoffCase",
+        back_populates="messages",
+    )
+    sender: Mapped["Account"] = relationship(
+        "Account",
+        foreign_keys=[sender_id],
     )

@@ -90,6 +90,12 @@ export const api = {
   getAccounts: () => request(`${API_PREFIX}/accounts`),
   getAccount: (accountId) => request(`${API_PREFIX}/accounts/${accountId}`),
   getTransactions: (accountId) => request(`${API_PREFIX}/accounts/${accountId}/transactions`),
+  getContacts: (accountId) => request(`${API_PREFIX}/accounts/${accountId}/contacts`),
+  createContact: (accountId, contactData) =>
+    request(`${API_PREFIX}/accounts/${accountId}/contacts`, {
+      method: 'POST',
+      body: JSON.stringify(contactData),
+    }),
 
   loginDemo: async (accountId) => {
     const res = await request(`${API_PREFIX}/accounts/demo-login`, {
@@ -116,12 +122,23 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
-  // Human Handoff Queue (Server enforces role == 'agent' via session token)
+  // Human Handoff Queue & Two-Way Messaging
   getHandoffCases: (statusFilter = null) => {
     const query = statusFilter && statusFilter !== 'ALL' ? `?status=${encodeURIComponent(statusFilter)}` : '';
     return request(`${API_PREFIX}/handoff/cases${query}`);
   },
   getHandoffCase: (caseId) => request(`${API_PREFIX}/handoff/cases/${caseId}`),
+  getActiveHandoffCase: () => request(`${API_PREFIX}/handoff/cases/active`),
+  getHandoffMessages: (caseId) => request(`${API_PREFIX}/handoff/cases/${caseId}/messages`),
+  sendHandoffMessage: (caseId, messageText) =>
+    request(`${API_PREFIX}/handoff/cases/${caseId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ message_text: messageText }),
+    }),
+  cancelHandoffCase: (caseId) =>
+    request(`${API_PREFIX}/handoff/cases/${caseId}/cancel`, {
+      method: 'POST',
+    }),
   resolveHandoffCase: (caseId, payload) =>
     request(`${API_PREFIX}/handoff/cases/${caseId}/resolve`, {
       method: 'POST',

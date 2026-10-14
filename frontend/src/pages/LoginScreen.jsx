@@ -27,7 +27,7 @@ export function LoginScreen({ onLoginSuccess }) {
   }
 
   return (
-    <div style={{ maxWidth: '560px', margin: '2rem auto' }}>
+    <div className="login-screen-container">
       <div className="glass-card-elevated">
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div

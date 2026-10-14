@@ -17,12 +17,12 @@ function MainApplication() {
     <div className="app-container">
       {/* Top Navigation Bar */}
       <header className="top-navbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+        <div className="brand-container">
           <div className="brand-badge">
             <div className="brand-icon">VP</div>
             <div>
               <div className="brand-title">VaaniPay</div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Voice Banking Agent</div>
+              <div className="brand-subtitle">Voice Banking Agent</div>
             </div>
           </div>
           <span className="brand-pill">Stage 4 Verified</span>
@@ -49,7 +49,7 @@ function MainApplication() {
           </div>
 
           {/* User Profile Pill */}
-          <div style={{ position: 'relative' }}>
+          <div className="user-profile-menu-container">
             <button
               type="button"
               onClick={() => setShowProfileSwitcher(!showProfileSwitcher)}
@@ -64,11 +64,13 @@ function MainApplication() {
             {/* Profile Dropdown Menu */}
             {showProfileSwitcher && (
               <div
+                className="profile-dropdown-menu"
                 style={{
                   position: 'absolute',
                   right: 0,
                   top: '110%',
                   width: '260px',
+                  maxWidth: 'calc(100vw - 2rem)',
                   background: 'var(--bg-glass-elevated)',
                   backdropFilter: 'blur(20px)',
                   border: '1px solid var(--border-highlight)',

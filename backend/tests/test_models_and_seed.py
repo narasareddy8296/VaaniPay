@@ -43,11 +43,12 @@ def test_seed_database_creates_synthetic_accounts_and_contacts(db_session: Sessi
 
     # Verify Priya's contacts
     priya_contacts = db_session.query(Contact).filter(Contact.account_id == "acc_priya").all()
-    assert len(priya_contacts) == 3
+    assert len(priya_contacts) == 4
     priya_contact_names = {c.contact_name for c in priya_contacts}
     assert "Ramesh Kumar" in priya_contact_names
     assert "Sharmaji" in priya_contact_names
     assert "Neha" in priya_contact_names
+    assert "Abhishek Verma" in priya_contact_names
 
     # Verify Ramesh's contacts
     ramesh_contacts = db_session.query(Contact).filter(Contact.account_id == "acc_ramesh").all()
@@ -66,8 +67,8 @@ def test_repeatable_seed_is_idempotent(db_session: Session):
     seed_database(db_session)
     count_accounts_1 = db_session.query(Account).count()
     count_contacts_1 = db_session.query(Contact).count()
-    assert count_accounts_1 == 3
-    assert count_contacts_1 == 5
+    assert count_accounts_1 == 4
+    assert count_contacts_1 == 6
 
     # Second execution
     res2 = seed_database(db_session)

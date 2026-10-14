@@ -13,6 +13,14 @@ class ContactBase(BaseModel):
     is_frequent: bool = True
 
 
+class ContactCreate(BaseModel):
+    contact_name: str
+    beneficiary_account_id: Optional[str] = None
+    phone_number: Optional[str] = None
+    aliases: Optional[str] = None
+    is_frequent: bool = False  # New payees default to non-frequent to enforce step-up PIN
+
+
 class ContactRead(ContactBase):
     model_config = ConfigDict(from_attributes=True)
 

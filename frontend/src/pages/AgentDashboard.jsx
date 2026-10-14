@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
@@ -11,17 +11,65 @@ export function AgentDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Two-Way Messaging State
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [msgError, setMsgError] = useState(null);
+  const messagesEndRef = useRef(null);
+
   // Resolution Form State
   const [actionChoice, setActionChoice] = useState('APPROVE');
   const [operatorNote, setOperatorNote] = useState('');
   const [submittingResolution, setSubmittingResolution] = useState(false);
   const [resolutionMessage, setResolutionMessage] = useState(null);
 
+  // Load cases list
   useEffect(() => {
     if (role === 'agent') {
       loadCases();
     }
   }, [role, statusFilter]);
+
+  // Polling for cases and active case conversation
+  useEffect(() => {
+    if (role !== 'agent') return;
+
+    const interval = setInterval(() => {
+      // Background refresh queue
+      api.getHandoffCases(statusFilter)
+        .then((data) => {
+          setCases(data);
+          if (selectedCase) {
+            const updated = data.find((c) => c.id === selectedCase.id);
+            if (updated) setSelectedCase((prev) => ({ ...prev, ...updated }));
+          }
+        })
+        .catch(() => {});
+
+      // Background refresh messages for selected case
+      if (selectedCase?.id) {
+        api.getHandoffMessages(selectedCase.id)
+          .then((msgs) => setMessages(msgs))
+          .catch(() => {});
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [role, statusFilter, selectedCase?.id]);
+
+  // Load messages when selected case changes
+  useEffect(() => {
+    if (selectedCase?.id) {
+      loadMessages(selectedCase.id);
+    } else {
+      setMessages([]);
+    }
+  }, [selectedCase?.id]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   async function loadCases() {
     setLoading(true);
@@ -30,7 +78,6 @@ export function AgentDashboard() {
       const data = await api.getHandoffCases(statusFilter);
       setCases(data);
       if (selectedCase) {
-        // Refresh selected case details if already selected
         const updated = data.find((c) => c.id === selectedCase.id);
         if (updated) setSelectedCase(updated);
       }
@@ -38,6 +85,43 @@ export function AgentDashboard() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadMessages(caseId) {
+    try {
+      const msgs = await api.getHandoffMessages(caseId);
+      setMessages(msgs);
+    } catch (err) {
+      // Silently handle polling errors
+    }
+  }
+
+  async function handleSendMessage(e) {
+    e.preventDefault();
+    if (!selectedCase || !newMessage.trim() || sendingMessage) return;
+
+    const textToSend = newMessage.trim();
+    setSendingMessage(true);
+    setMsgError(null);
+
+    try {
+      const sentMsg = await api.sendHandoffMessage(selectedCase.id, textToSend);
+      setMessages((prev) => [...prev, sentMsg]);
+      setNewMessage('');
+      // If case was pending/waiting, update local status to AGENT_CONNECTED
+      if (['PENDING', 'WAITING'].includes(selectedCase.status)) {
+        setSelectedCase((prev) => ({
+          ...prev,
+          status: 'AGENT_CONNECTED',
+          status_display: 'Agent Connected',
+        }));
+      }
+      await loadCases();
+    } catch (err) {
+      setMsgError(err.message);
+    } finally {
+      setSendingMessage(false);
     }
   }
 
@@ -65,12 +149,18 @@ export function AgentDashboard() {
       setResolutionMessage(res.explanation);
       setOperatorNote('');
       await loadCases();
+      if (selectedCase?.id) {
+        const updatedCase = await api.getHandoffCase(selectedCase.id);
+        setSelectedCase(updatedCase);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setSubmittingResolution(false);
     }
   }
+
+  const isCaseClosed = selectedCase && ['APPROVED', 'REJECTED', 'RESOLVED', 'CANCELLED'].includes(selectedCase.status);
 
   // Role Gate: If authenticated user is NOT an agent
   if (role !== 'agent') {
@@ -94,7 +184,7 @@ export function AgentDashboard() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) 1.25fr', gap: '1.5rem' }}>
+    <div className="agent-dashboard-grid">
       {/* Left Column: Escalation Queue */}
       <div className="glass-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -118,7 +208,7 @@ export function AgentDashboard() {
 
         {/* Filter Badges */}
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-          {['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'REPEAT_REQUESTED'].map((filter) => (
+          {['ALL', 'WAITING', 'AGENT_CONNECTED', 'APPROVED', 'REJECTED', 'CANCELLED'].map((filter) => (
             <button
               key={filter}
               type="button"
@@ -134,7 +224,7 @@ export function AgentDashboard() {
                 cursor: 'pointer',
               }}
             >
-              {filter}
+              {filter.replace('_', ' ')}
             </button>
           ))}
         </div>
@@ -148,9 +238,29 @@ export function AgentDashboard() {
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '560px', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '580px', overflowY: 'auto' }}>
           {cases.map((c) => {
             const isSelected = selectedCase?.id === c.id;
+            const isPending = ['PENDING', 'WAITING'].includes(c.status);
+            const isConnected = c.status === 'AGENT_CONNECTED';
+            const isApproved = ['APPROVED', 'RESOLVED'].includes(c.status);
+
+            const badgeBg = isPending
+              ? 'rgba(245, 158, 11, 0.2)'
+              : isConnected
+              ? 'rgba(56, 189, 248, 0.2)'
+              : isApproved
+              ? 'rgba(16, 185, 129, 0.2)'
+              : 'rgba(239, 68, 68, 0.2)';
+
+            const badgeColor = isPending
+              ? '#FBBF24'
+              : isConnected
+              ? '#38BDF8'
+              : isApproved
+              ? '#34D399'
+              : '#F87171';
+
             return (
               <div
                 key={c.id}
@@ -174,29 +284,20 @@ export function AgentDashboard() {
                       fontWeight: 700,
                       padding: '0.15rem 0.45rem',
                       borderRadius: 'var(--radius-sm)',
-                      background:
-                        c.status === 'PENDING'
-                          ? 'rgba(245, 158, 11, 0.2)'
-                          : c.status === 'APPROVED'
-                          ? 'rgba(16, 185, 129, 0.2)'
-                          : 'rgba(239, 68, 68, 0.2)',
-                      color:
-                        c.status === 'PENDING'
-                          ? '#FBBF24'
-                          : c.status === 'APPROVED'
-                          ? '#34D399'
-                          : '#F87171',
+                      background: badgeBg,
+                      color: badgeColor,
                     }}
                   >
-                    {c.status}
+                    {c.status_display || c.status}
                   </span>
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginBottom: '0.3rem' }}>
                   Reason: <strong>{c.escalation_reason}</strong>
                   {c.uncertain_field && <span> ({c.uncertain_field})</span>}
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  Case: {c.id} • {new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  <span>ID: {c.id}</span>
+                  <span>{new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               </div>
             );
@@ -204,8 +305,8 @@ export function AgentDashboard() {
         </div>
       </div>
 
-      {/* Right Column: Case Detail & Resolution */}
-      <div className="glass-card-elevated">
+      {/* Right Column: Case Detail, Two-Way Conversation & Resolution */}
+      <div className="glass-card-elevated" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         {!selectedCase ? (
           <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📋</div>
@@ -213,11 +314,12 @@ export function AgentDashboard() {
               Select a Case to Review
             </h3>
             <p style={{ fontSize: '0.85rem' }}>
-              Choose any escalation from the queue on the left to examine speech context and submit an audit decision.
+              Choose any escalation from the queue on the left to examine speech context, message the customer, and submit an audit decision.
             </p>
           </div>
         ) : (
           <div>
+            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
               <div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', fontWeight: 700, textTransform: 'uppercase' }}>
@@ -236,28 +338,24 @@ export function AgentDashboard() {
                   borderRadius: 'var(--radius-full)',
                   fontSize: '0.75rem',
                   fontWeight: 700,
-                  background: selectedCase.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
-                  color: selectedCase.status === 'PENDING' ? '#FBBF24' : '#34D399',
+                  background: ['PENDING', 'WAITING'].includes(selectedCase.status)
+                    ? 'rgba(245, 158, 11, 0.2)'
+                    : selectedCase.status === 'AGENT_CONNECTED'
+                    ? 'rgba(56, 189, 248, 0.2)'
+                    : ['APPROVED', 'RESOLVED'].includes(selectedCase.status)
+                    ? 'rgba(16, 185, 129, 0.2)'
+                    : 'rgba(239, 68, 68, 0.2)',
+                  color: ['PENDING', 'WAITING'].includes(selectedCase.status)
+                    ? '#FBBF24'
+                    : selectedCase.status === 'AGENT_CONNECTED'
+                    ? '#38BDF8'
+                    : ['APPROVED', 'RESOLVED'].includes(selectedCase.status)
+                    ? '#34D399'
+                    : '#F87171',
                 }}
               >
-                {selectedCase.status}
+                {selectedCase.status_display || selectedCase.status}
               </div>
-            </div>
-
-            {/* Safety Invariant Notice */}
-            <div
-              style={{
-                background: 'rgba(99, 102, 241, 0.1)',
-                border: '1px solid rgba(99, 102, 241, 0.25)',
-                borderRadius: 'var(--radius-md)',
-                padding: '0.85rem',
-                fontSize: '0.8rem',
-                color: '#CBD5E1',
-                marginBottom: '1.25rem',
-              }}
-            >
-              <strong>🛡️ Audit Policy Notice:</strong> Agent approval is an audit record review, <em>not</em> direct
-              payment execution. Approval does not bypass customer confirmation, PIN requirements, or ledger balance limits.
             </div>
 
             {/* Context Fields */}
@@ -294,14 +392,127 @@ export function AgentDashboard() {
               )}
             </div>
 
-            {/* Resolution Form (Active for PENDING or already resolved) */}
-            {selectedCase.status === 'PENDING' ? (
+            {/* TWO-WAY LIVE CONVERSATION PANEL */}
+            <div
+              style={{
+                background: 'rgba(15, 23, 42, 0.6)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1rem',
+                marginBottom: '1.25rem',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '1.1rem' }}>💬</span>
+                  <strong style={{ fontSize: '0.95rem' }}>Live Customer Conversation</strong>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  {messages.length} message{messages.length === 1 ? '' : 's'}
+                </div>
+              </div>
+
+              {/* Messages Container */}
+              <div
+                style={{
+                  maxHeight: '220px',
+                  minHeight: '120px',
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.6rem',
+                  padding: '0.5rem',
+                  background: 'var(--bg-tertiary)',
+                  borderRadius: 'var(--radius-md)',
+                  marginBottom: '0.75rem',
+                }}
+              >
+                {messages.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1.5rem 0' }}>
+                    No messages in this case yet. Send a message to initiate two-way communication with the customer.
+                  </div>
+                ) : (
+                  messages.map((m) => {
+                    const isAgent = m.sender_role === 'agent';
+                    return (
+                      <div
+                        key={m.id}
+                        style={{
+                          alignSelf: isAgent ? 'flex-end' : 'flex-start',
+                          maxWidth: '82%',
+                          background: isAgent ? 'rgba(99, 102, 241, 0.25)' : 'rgba(30, 41, 59, 0.9)',
+                          border: isAgent ? '1px solid rgba(99, 102, 241, 0.5)' : '1px solid var(--border-subtle)',
+                          borderRadius: 'var(--radius-md)',
+                          padding: '0.6rem 0.85rem',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '0.2rem' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: isAgent ? '#A5B4FC' : '#38BDF8' }}>
+                            {isAgent ? '👨‍💼 You (Agent)' : `👤 ${m.sender_name}`}
+                          </span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                            {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.4 }}>
+                          {m.message_text}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Message Input Form */}
+              {!isCaseClosed ? (
+                <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type reply to customer..."
+                    disabled={sendingMessage}
+                    style={{
+                      flex: 1,
+                      padding: '0.6rem 0.85rem',
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-md)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.85rem',
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={sendingMessage || !newMessage.trim()}
+                    style={{ fontSize: '0.85rem', padding: '0.6rem 1rem' }}
+                  >
+                    {sendingMessage ? 'Sending...' : 'Send Reply'}
+                  </button>
+                </form>
+              ) : (
+                <div style={{ background: 'var(--bg-secondary)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                  🔒 Case is {selectedCase.status_display || selectedCase.status}. Conversation is closed.
+                </div>
+              )}
+
+              {msgError && (
+                <div style={{ color: '#F87171', fontSize: '0.75rem', marginTop: '0.4rem' }}>
+                  ⚠️ {msgError}
+                </div>
+              )}
+            </div>
+
+            {/* Resolution Form (Active for PENDING/CONNECTED or already resolved) */}
+            {!isCaseClosed ? (
               <form onSubmit={handleResolveCase}>
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>
                     Review Action Decision:
                   </label>
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <div className="resolution-choice-group">
                     {[
                       { id: 'APPROVE', label: 'Approve Review', color: 'var(--success)' },
                       { id: 'REJECT', label: 'Reject / Block', color: 'var(--danger)' },
@@ -343,8 +554,8 @@ export function AgentDashboard() {
                     id="agent-notes"
                     value={operatorNote}
                     onChange={(e) => setOperatorNote(e.target.value)}
-                    placeholder="Enter reason for decision (e.g. 'Verified speech recording with customer over phone; confirmed payee Ramesh')."
-                    rows={3}
+                    placeholder="Enter reason for decision (e.g. 'Verified speech recording with customer over chat; confirmed payee Abhishek')."
+                    rows={2}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
@@ -386,14 +597,18 @@ export function AgentDashboard() {
             ) : (
               <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--success)', marginBottom: '0.5rem' }}>
-                  Case Resolved
+                  Case Closed ({selectedCase.status_display || selectedCase.status})
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Agent ID: <strong>{selectedCase.agent_id}</strong>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-                  Operator Note: <em>"{selectedCase.agent_notes}"</em>
-                </div>
+                {selectedCase.agent_id && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Agent ID: <strong>{selectedCase.agent_id}</strong>
+                  </div>
+                )}
+                {selectedCase.agent_notes && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
+                    Operator Note: <em>"{selectedCase.agent_notes}"</em>
+                  </div>
+                )}
                 {selectedCase.resolved_at && (
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
                     Resolved at: {new Date(selectedCase.resolved_at).toLocaleString()}

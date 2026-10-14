@@ -68,6 +68,12 @@
   padding: 0;
 }
 
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   font-family: var(--font-sans);
   background: var(--bg-primary);
@@ -91,8 +97,10 @@ body {
 /* Base Container */
 .app-container {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 /* Top Navigation Bar */
@@ -107,6 +115,13 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
+  gap: 1rem;
+}
+
+.brand-container {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
 }
 
 .brand-badge {
@@ -130,6 +145,7 @@ body {
   font-size: 1.25rem;
   color: white;
   box-shadow: 0 4px 12px var(--primary-glow);
+  flex-shrink: 0;
 }
 
 .brand-title {
@@ -140,6 +156,12 @@ body {
   background: linear-gradient(90deg, #FFFFFF, #94A3B8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+}
+
+.brand-subtitle {
+  font-size: 0.7rem;
+  color: var(--text-muted);
 }
 
 .brand-pill {
@@ -151,12 +173,17 @@ body {
   color: var(--accent-cyan);
   font-weight: 600;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .nav-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.user-profile-menu-container {
+  position: relative;
 }
 
 /* User Badge & Switcher */
@@ -254,6 +281,47 @@ body {
   border-radius: var(--radius-lg);
   padding: 2rem;
   box-shadow: var(--shadow-lg);
+}
+
+/* Responsive Container Layout Classes */
+.customer-banking-container {
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.contact-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.dialogue-action-buttons {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.agent-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) 1.35fr;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.resolution-choice-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.login-screen-container {
+  max-width: 560px;
+  width: 100%;
+  margin: 2rem auto;
 }
 
 /* Simulated Ledger Banner */
@@ -561,18 +629,288 @@ body {
   font-weight: 600;
 }
 
-/* Responsive Grid */
+/* =========================================================================
+   Device & Cross-Platform Responsive Styles
+   Full compatibility across mobile, tablet, and desktop
+   ========================================================================= */
+
+@media (max-width: 900px) {
+  .agent-dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
 @media (max-width: 768px) {
   .main-content {
-    padding: 1rem;
+    padding: 1rem 0.75rem;
   }
+
+  /* Responsive Top Navbar Grid */
   .top-navbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand profile"
+      "tabs tabs";
+    row-gap: 0.75rem;
+    column-gap: 0.5rem;
     padding: 0.75rem 1rem;
   }
+
+  .brand-container {
+    grid-area: brand;
+    align-self: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .brand-pill {
+    display: none;
+  }
+
+  .nav-actions {
+    display: contents;
+  }
+
+  .user-profile-menu-container {
+    grid-area: profile;
+    align-self: center;
+    position: relative;
+  }
+
+  .tab-switcher {
+    grid-area: tabs;
+    width: 100%;
+    display: flex;
+  }
+
+  .tab-btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  .user-status-pill {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.78rem;
+    max-width: 200px;
+  }
+
   .readback-amount {
-    font-size: 2rem;
+    font-size: clamp(1.8rem, 6vw, 2.25rem);
   }
+
   .challenge-code {
-    font-size: 2.2rem;
+    font-size: clamp(1.8rem, 7vw, 2.4rem);
+    letter-spacing: 0.2em;
   }
+
+  .glass-card {
+    padding: 1.25rem;
+  }
+
+  .glass-card-elevated {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 540px) {
+  .contact-form-row {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .dialogue-action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dialogue-action-buttons .btn {
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  .resolution-choice-group label {
+    flex: 1 1 100%;
+  }
+
+  .login-screen-container {
+    margin: 1rem auto;
+  }
+
+  .disclaimer-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  /* Prevent mobile browser unwanted auto-zoom */
+  input[type="text"],
+  input[type="tel"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-navbar {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .brand-title {
+    font-size: 1.15rem;
+  }
+
+  .brand-subtitle {
+    display: none;
+  }
+
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1.05rem;
+  }
+
+  .tab-btn {
+    font-size: 0.74rem;
+    padding: 0.4rem 0.25rem;
+  }
+
+  .user-status-pill {
+    font-size: 0.72rem;
+    padding: 0.3rem 0.45rem;
+    max-width: 155px;
+  }
+
+  .pin-digit-box {
+    width: 46px;
+    height: 54px;
+    font-size: 1.5rem;
+  }
+
+  .pin-display {
+    gap: 0.5rem;
+  }
+
+  .pin-mode-btn {
+    font-size: 0.78rem;
+    padding: 0.55rem 0.5rem;
+  }
+}
+
+/* =========================================================================
+   Stage 8: Secure Voice PIN Entry Styles
+   ========================================================================= */
+.pin-mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.pin-mode-btn {
+  flex: 1;
+  max-width: 200px;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.pin-mode-btn.active {
+  background: var(--primary);
+  border-color: var(--border-active);
+  color: white;
+  box-shadow: 0 0 12px var(--primary-glow);
+}
+
+.pin-mode-btn:hover:not(.active) {
+  background: var(--bg-secondary);
+  border-color: var(--border-highlight);
+  color: var(--text-primary);
+}
+
+.voice-pin-container {
+  background: rgba(17, 24, 39, 0.7);
+  border: 1px solid var(--border-highlight);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  margin: 1rem 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: slide-up 0.3s ease;
+}
+
+.voice-pin-pulse {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, rgba(99, 102, 241, 0.05) 70%);
+  border: 2px solid var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 1.8rem;
+  box-shadow: 0 0 20px var(--primary-glow);
+  animation: pulse-ring 1.8s infinite;
+}
+
+.voice-pin-pulse.paused {
+  border-color: var(--text-muted);
+  box-shadow: none;
+  animation: none;
+  background: var(--bg-tertiary);
+  opacity: 0.7;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 16px rgba(99, 102, 241, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+.voice-pin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid var(--success);
+  color: #34D399;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.voice-pin-controls {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
 }
