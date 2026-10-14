@@ -62,6 +62,9 @@ export function CustomerBanking() {
   sessionIdRef.current = sessionId;
   const livenessChallengeRef = useRef(livenessChallenge);
   livenessChallengeRef.current = livenessChallenge;
+  const [sessionChannel, setSessionChannel] = useState('VOICE');
+  const sessionChannelRef = useRef('VOICE');
+  sessionChannelRef.current = sessionChannel;
 
   useEffect(() => {
     loadTransactions();
@@ -255,14 +258,14 @@ export function CustomerBanking() {
       const speechText = `Please confirm: send ${res.readback_card.amount_words} to ${res.readback_card.payee_name}. Say 'Confirm' to proceed, or say 'Cancel'.`;
       setVoiceGuidance('Speaking payment summary...');
       speechAdapterRef.current.speak(speechText, async () => {
-        setVoiceGuidance("🎙️ Listening: Say 'Confirm' to proceed, or 'Cancel' to stop");
+        setVoiceGuidance("🎙️ Listening: Say 'Confirm' to proceed, or click 'Confirm Details' below");
         try {
           const ok = await speechAdapterRef.current?.startListening();
           if (!ok) {
-            setVoiceGuidance("Tap microphone to confirm by voice, or use buttons below.");
+            setVoiceGuidance("Say 'Confirm' or click 'Confirm Details' below.");
           }
         } catch (_) {
-          setVoiceGuidance("Browser requires user click to activate mic. Click 'Speak Now' or use buttons below.");
+          setVoiceGuidance("Say 'Confirm' or click 'Confirm Details' below.");
         }
       });
       return;
@@ -412,6 +415,8 @@ export function CustomerBanking() {
   // 1. Submit voice speech
   function submitSpeechTurn(spokenText) {
     if (!spokenText.trim()) return;
+    setSessionChannel('VOICE');
+    sessionChannelRef.current = 'VOICE';
     const currentState = dialogueStateRef.current;
 
     if (currentState === 'CAPTURE') {
@@ -514,6 +519,8 @@ export function CustomerBanking() {
     e.preventDefault();
     if (!typedInput.trim()) return;
 
+    setSessionChannel('TYPED');
+    sessionChannelRef.current = 'TYPED';
     const text = typedInput.trim();
     setTypedInput('');
     setTranscript(text);
@@ -571,7 +578,7 @@ export function CustomerBanking() {
     }
     sendTurnRequest({
       action: 'CONFIRM_READBACK',
-      channel: 'TYPED',
+      channel: sessionChannelRef.current || 'VOICE',
     });
   }
 
@@ -585,8 +592,8 @@ export function CustomerBanking() {
     sendTurnRequest({
       action: 'SUBMIT_LIVENESS',
       liveness_response: digits,
-      channel: 'TYPED',
-      audio_metadata: { scenario: 'typed_fallback' },
+      channel: sessionChannelRef.current || 'VOICE',
+      audio_metadata: { scenario: sessionChannelRef.current === 'VOICE' ? 'liveness_verified' : 'typed_fallback' },
     });
   }
 

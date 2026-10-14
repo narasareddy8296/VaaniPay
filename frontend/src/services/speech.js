@@ -119,7 +119,12 @@ export class SpeechAdapter {
       this.recognition.onresult = (event) => {
         // SAFETY GUARD: Never use a transcript generated while the system TTS is speaking
         if (this.isSpeaking) {
-          return;
+          // If window.speechSynthesis is genuinely speaking, drop the audio to prevent feedback loops
+          if (typeof window !== 'undefined' && window.speechSynthesis?.speaking) {
+            return;
+          }
+          // Self-heal: flag was set but audio is no longer playing
+          this.isSpeaking = false;
         }
 
         let interimTranscript = '';
@@ -198,16 +203,7 @@ export class SpeechAdapter {
    * Returns { ok: true } on success or { ok: false, code, message } on failure.
    */
   async verifyMicrophoneAccess() {
-    // 1. Check for insecure context
-    if (typeof window !== 'undefined' && window.isSecureContext === false) {
-      return {
-        ok: false,
-        code: SPEECH_ERROR_CODES.INSECURE_CONTEXT,
-        message: 'Microphone access requires a secure context (HTTPS or localhost). Please access the app via http://localhost:5173 or HTTPS.',
-      };
-    }
-
-    // 2. Check for Web Speech API support
+    // 1. Check for Web Speech API support
     if (!this.isSupported || !this.recognition) {
       return {
         ok: false,
@@ -215,6 +211,9 @@ export class SpeechAdapter {
         message: 'Web Speech API is not supported in this browser (Chrome or Edge is recommended). Please use the typed input box below.',
       };
     }
+
+    // 2. Check for insecure context (e.g. cloud HTTP)
+    const isPotentiallyInsecure = typeof window !== 'undefined' && window.isSecureContext === false;
 
     // 3. Check for mediaDevices hardware & permission prompt
     if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
@@ -259,6 +258,13 @@ export class SpeechAdapter {
           stream.getTracks().forEach((track) => track.stop());
         } catch (err) {
           const mapped = mapMediaError(err);
+          if (isPotentiallyInsecure && (mapped.code === SPEECH_ERROR_CODES.SECURITY_ERROR || mapped.code === SPEECH_ERROR_CODES.PERMISSION_DENIED)) {
+            return {
+              ok: false,
+              code: SPEECH_ERROR_CODES.INSECURE_CONTEXT,
+              message: 'Microphone access is restricted on non-HTTPS cloud servers. Please access via HTTPS or use the typed input box below.',
+            };
+          }
           return {
             ok: false,
             code: mapped.code,
@@ -266,6 +272,12 @@ export class SpeechAdapter {
           };
         }
       }
+    } else if (isPotentiallyInsecure) {
+      return {
+        ok: false,
+        code: SPEECH_ERROR_CODES.INSECURE_CONTEXT,
+        message: 'Microphone access is restricted on non-HTTPS cloud servers. Please access via HTTPS or use the typed input box below.',
+      };
     }
 
     return { ok: true };
@@ -347,8 +359,17 @@ export class SpeechAdapter {
     // 1. Abort any active speech listening immediately!
     this.abortListening();
 
-    // 2. Cancel prior ongoing speech utterances
-    window.speechSynthesis.cancel();
+    // 2. Clear any pending safety watchdog timer
+    if (this._speakTimeout) {
+      clearTimeout(this._speakTimeout);
+      this._speakTimeout = null;
+    }
+
+    // 3. Cancel and resume speech synthesis to clear stuck audio pipelines
+    try {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
+    } catch (_) {}
 
     if (!text) {
       this.isSpeaking = false;
@@ -357,28 +378,62 @@ export class SpeechAdapter {
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
+    // Retain reference on instance to prevent Chrome V8 garbage-collecting the utterance mid-speech!
+    this._activeUtterance = utterance;
     utterance.lang = 'en-IN';
     utterance.rate = 0.95; // Measured pace for financial clarity
 
     this.isSpeaking = true;
 
-    utterance.onend = () => {
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
       this.isSpeaking = false;
-      if (onComplete) onComplete();
+      this._activeUtterance = null;
+      if (this._speakTimeout) {
+        clearTimeout(this._speakTimeout);
+        this._speakTimeout = null;
+      }
+      if (onComplete) {
+        try {
+          onComplete();
+        } catch (_) {}
+      }
     };
 
-    utterance.onerror = () => {
-      this.isSpeaking = false;
-      if (onComplete) onComplete();
-    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
 
-    window.speechSynthesis.speak(utterance);
+    // Safety watchdog: Chrome sometimes stalls or pauses synthesis without firing onend.
+    // Calculate duration based on word count plus 2 seconds buffer.
+    const words = text.split(/\s+/).length;
+    const timeoutMs = Math.max(3000, Math.ceil((words / 2.0) * 1000) + 2000);
+    this._speakTimeout = setTimeout(() => {
+      finish();
+    }, timeoutMs);
+
+    try {
+      window.speechSynthesis.speak(utterance);
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    } catch (_) {
+      finish();
+    }
   }
 
   stopSpeaking() {
     this.isSpeaking = false;
+    this._activeUtterance = null;
+    if (this._speakTimeout) {
+      clearTimeout(this._speakTimeout);
+      this._speakTimeout = null;
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+      } catch (_) {}
     }
   }
 }
