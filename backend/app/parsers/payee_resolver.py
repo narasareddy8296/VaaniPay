@@ -53,8 +53,69 @@ CLARIFICATION_MIN_THRESHOLD = 60.0
 AMBIGUITY_SCORE_DELTA = 6.0  # Scores within 6 points of each other are considered ambiguous
 
 
+DEVANAGARI_NAME_MAP = {
+    "रमेश": "ramesh",
+    "रमेश कुमार": "ramesh kumar",
+    "प्रिया": "priya",
+    "प्रिया शर्मा": "priya sharma",
+    "शर्माजी": "sharmaji",
+    "शर्मा जी": "sharmaji",
+    "नेहा": "neha",
+    "अभिषेक": "abhishek",
+    "अभिषेक वर्मा": "abhishek verma",
+    "अमित": "amit",
+    "पापा": "papa",
+    "डैड": "dad",
+    "भाई": "bhai",
+    "दीदी": "didi",
+}
+
+
+def devanagari_to_latin(text: str) -> str:
+    """Deterministic phonetic transliteration from Devanagari to Latin characters."""
+    if not text:
+        return ""
+    mapping = {
+        'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng',
+        'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
+        'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
+        'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
+        'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
+        'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
+        'क़': 'q', 'ख़': 'kh', 'ग़': 'gh', 'ज़': 'z', 'फ़': 'f', 'ड़': 'd', 'ढ़': 'dh',
+        'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo', 'ऋ': 'ri',
+        'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
+        'ा': 'a', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo', 'ृ': 'ri',
+        'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au',
+        'ं': 'n', 'ँ': 'n', 'ः': 'h', '्': '',
+    }
+    consonants = set('कखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसहक़ख़ग़ज़फ़ड़ढ़')
+    matras = set('ािीुूृेैोौ्')
+    res = []
+    chars = list(text)
+    for i, c in enumerate(chars):
+        if c in mapping:
+            res.append(mapping[c])
+            if c in consonants:
+                next_c = chars[i+1] if i + 1 < len(chars) else None
+                if next_c != '्' and next_c not in matras:
+                    res.append('a')
+        else:
+            res.append(c)
+    out = ''.join(res)
+    words = out.split()
+    clean_words = []
+    for w in words:
+        if len(w) > 3 and w.endswith('a') and not w.endswith('aa'):
+            clean_words.append(w[:-1])
+        else:
+            clean_words.append(w)
+    return ' '.join(clean_words)
+
+
 AMOUNT_CURRENCY_INTENT_PATTERN = re.compile(
-    r'\b(?:dedh|dhedh|derh|deydh|dadh|dhai|dhaai|dhaee|adhai|sawa|sava|sawwa|paune|pone|saade|sadhe|sade|'
+    r'(?:(?<=^)|(?<=[^\w\u0900-\u097F]))(?:'
+    r'dedh|dhedh|derh|deydh|dadh|dhai|dhaai|dhaee|adhai|sawa|sava|sawwa|paune|pone|saade|sadhe|sade|'
     r'डेढ़|डेढ|ढाई|ढा़ई|सवा|पौने|साढ़े|साढे|'
     r'sau|so|sou|hundred|hazaar|hazar|hajar|hazaarr|hazarr|thousand|lakh|laakh|laak|lac|lacs|lakhs|laakhs|crore|crores|cr|k|'
     r'सौ|हज़ार|हजार|लाख|करोड़|'
@@ -62,7 +123,8 @@ AMOUNT_CURRENCY_INTENT_PATTERN = re.compile(
     r'शून्य|एक|दो|तीन|चार|पाँच|पांच|छह|सात|आठ|नौ|दस|'
     r'bees|pachees|tees|chaalees|pachaas|saath|sattar|assi|nabbe|बीस|पच्चीस|तीस|चालीस|पचास|'
     r'rupees|rupaye|rupya|rupee|rs|inr|/-|रुपये|रुपए|रुपया|रु|'
-    r'send|pay|transfer|bhej|bhejo|de|do|karo|kardo|kar|kripya|please)\b|\b\d+(?:\.\d+)?\b',
+    r'send|pay|transfer|bhej|bhejo|de|do|karo|kardo|kar|kripya|please|भेज|भेजो|करो|कर|दो'
+    r')(?:(?=[^\w\u0900-\u097F])|$)|(?:(?<=^)|(?<=[^\w\u0900-\u097F]))\d+(?:\.\d+)?(?:(?=[^\w\u0900-\u097F])|$)',
     re.IGNORECASE,
 )
 
@@ -77,7 +139,7 @@ def extract_candidate_payee_name(text: str) -> Optional[str]:
     """
     Extracts candidate payee name substring from raw input transcripts.
     Disentangles amount phrases, currency tokens, and payment verbs from recipient names.
-    Handles English ('send to Ramesh', 'pay Ramesh') and Hinglish ('Ramesh ko ...', '... Ramesh ko bhej do').
+    Handles English ('send to Ramesh', 'pay Ramesh') and Hinglish ('Ramesh ko ...', '... Ramesh ko bhej do', 'रमेश को ...').
     """
     if not text:
         return None
@@ -86,8 +148,8 @@ def extract_candidate_payee_name(text: str) -> Optional[str]:
     repaired, _ = TranscriptRepairService.repair(text)
     cleaned = repaired.strip()
 
-    # Pattern 1: Hinglish '<name> ko ...' or '<amount> <name> ko ...'
-    m_ko = re.search(r'^(?:please\s+|kripya\s+)?(.*?)\s+ko\b', cleaned, re.IGNORECASE)
+    # Pattern 1: Hinglish '<name> ko ...' or '<name> को ...' or '<amount> <name> ko ...'
+    m_ko = re.search(r'^(?:please\s+|kripya\s+)?(.*?)\s+(?:ko|को)(?:[^\w\u0900-\u097F]|$)', cleaned, re.IGNORECASE)
     if m_ko:
         cand = _strip_amount_and_intent(m_ko.group(1))
         if cand:
@@ -107,7 +169,7 @@ def extract_candidate_payee_name(text: str) -> Optional[str]:
         if cand:
             return cand
 
-    # Fallback for standalone names (e.g. in CLARIFY_PAYEE response "Ramesh" or "Priya Sharma")
+    # Fallback for standalone names (e.g. in CLARIFY_PAYEE response "Ramesh" or "Priya Sharma" or "रमेश")
     cand = _strip_amount_and_intent(cleaned)
     if cand and len(cand.split()) <= 4:
         return cand
@@ -146,6 +208,7 @@ class PayeeResolver:
                 explanation="Who would you like to pay? Please specify the beneficiary payee.",
             )
         target_name = extracted_name.strip().lower()
+        target_latin = (DEVANAGARI_NAME_MAP.get(target_name) or devanagari_to_latin(target_name)).lower()
 
         if not contacts:
             return PayeeResolutionResult(
@@ -172,25 +235,30 @@ class PayeeResolver:
 
             for name_variant in names_to_check:
                 v_clean = name_variant.lower()
-                if target_name == v_clean:
-                    current_score = 100.0
-                else:
-                    # Compute fuzzy similarity metrics
-                    r = fuzz.ratio(target_name, v_clean)
-                    ts = fuzz.token_sort_ratio(target_name, v_clean)
-                    tset = fuzz.token_set_ratio(target_name, v_clean)
-                    target_words = set(target_name.split())
-                    variant_words = set(v_clean.split())
-                    if len(target_words) > len(variant_words) and variant_words:
-                        overlap = len(target_words & variant_words) / len(target_words)
-                        tset_effective = tset * overlap
-                    else:
-                        tset_effective = tset
-                    current_score = max(r, ts, (tset_effective if len(target_name) > 3 else r))
+                targets = [target_name]
+                if target_latin and target_latin != target_name:
+                    targets.append(target_latin)
 
-                if current_score > best_score:
-                    best_score = current_score
-                    matched_alias = name_variant
+                for tgt in targets:
+                    if tgt == v_clean:
+                        current_score = 100.0
+                    else:
+                        # Compute fuzzy similarity metrics
+                        r = fuzz.ratio(tgt, v_clean)
+                        ts = fuzz.token_sort_ratio(tgt, v_clean)
+                        tset = fuzz.token_set_ratio(tgt, v_clean)
+                        target_words = set(tgt.split())
+                        variant_words = set(v_clean.split())
+                        if len(target_words) > len(variant_words) and variant_words:
+                            overlap = len(target_words & variant_words) / len(target_words)
+                            tset_effective = tset * overlap
+                        else:
+                            tset_effective = tset
+                        current_score = max(r, ts, (tset_effective if len(tgt) > 3 else r))
+
+                    if current_score > best_score:
+                        best_score = current_score
+                        matched_alias = name_variant
 
             if best_score > 0:
                 scored_candidates.append(

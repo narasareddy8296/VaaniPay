@@ -84,28 +84,123 @@ SEC_MULT_MAP = {
 }
 
 SEC_WORD_MAP = {
+    # 0 - 9
     "shunya": 0, "zero": 0, "शून्य": 0,
     "ek": 1, "ik": 1, "one": 1, "एक": 1,
     "do": 2, "two": 2, "दो": 2,
     "teen": 3, "tin": 3, "three": 3, "तीन": 3,
     "chaar": 4, "char": 4, "four": 4, "चार": 4,
     "paanch": 5, "panch": 5, "five": 5, "पाँच": 5, "पांच": 5,
-    "chhah": 6, "che": 6, "chhe": 6, "six": 6, "छह": 6,
+    "chhah": 6, "che": 6, "chhe": 6, "six": 6, "छह": 6, "छः": 6,
     "saat": 7, "sat": 7, "seven": 7, "सात": 7,
     "aath": 8, "ath": 8, "eight": 8, "आठ": 8,
     "nau": 9, "no": 9, "nine": 9, "नौ": 9,
+    # 10 - 19
     "das": 10, "dus": 10, "ten": 10, "दस": 10,
-    "bees": 20, "twenty": 20, "बीस": 20,
-    "pachees": 25, "twenty-five": 25, "पच्चीस": 25,
-    "tees": 30, "thirty": 30, "तीस": 30,
-    "chaalees": 40, "forty": 40, "चालीस": 40,
-    "pachaas": 50, "fifty": 50, "पचास": 50,
+    "gyarah": 11, "gyara": 11, "eleven": 11, "ग्यारह": 11,
+    "baarah": 12, "bara": 12, "twelve": 12, "बारह": 12,
+    "terah": 13, "tera": 13, "thirteen": 13, "तेरह": 13,
+    "chaudah": 14, "chauda": 14, "chouda": 14, "fourteen": 14, "चौदह": 14,
+    "pandrah": 15, "pandra": 15, "fifteen": 15, "पंद्रह": 15,
+    "solah": 16, "sola": 16, "sixteen": 16, "सोलह": 16,
+    "satrah": 17, "satra": 17, "seventeen": 17, "सत्रह": 17,
+    "atharah": 18, "athara": 18, "eighteen": 18, "अट्ठारह": 18, "अठारह": 18,
+    "unnees": 19, "unnis": 19, "nineteen": 19, "उन्नीस": 19,
+    # 20 - 29
+    "bees": 20, "bis": 20, "twenty": 20, "बीस": 20,
+    "ikkees": 21, "ikkis": 21, "twenty one": 21, "twenty-one": 21, "इक्कीस": 21,
+    "baaees": 22, "bais": 22, "twenty two": 22, "twenty-two": 22, "बाईस": 22,
+    "teees": 23, "teis": 23, "twenty three": 23, "twenty-three": 23, "तेईस": 23,
+    "chaubees": 24, "chaubis": 24, "twenty four": 24, "twenty-four": 24, "चौबीस": 24,
+    "pachees": 25, "pachis": 25, "twenty five": 25, "twenty-five": 25, "पच्चीस": 25,
+    "chhabbees": 26, "chhabbis": 26, "twenty six": 26, "twenty-six": 26, "छब्बीस": 26,
+    "sattaees": 27, "sattais": 27, "twenty seven": 27, "twenty-seven": 27, "सत्ताईस": 27,
+    "atthaees": 28, "atthais": 28, "twenty eight": 28, "twenty-eight": 28, "अट्ठाईस": 28,
+    "untees": 29, "untis": 29, "twenty nine": 29, "twenty-nine": 29, "उनतीस": 29,
+    # 30 - 39
+    "tees": 30, "tis": 30, "thirty": 30, "तीस": 30,
+    "ikattees": 31, "ikattis": 31, "thirty one": 31, "thirty-one": 31, "इकत्तीस": 31,
+    "battees": 32, "battis": 32, "thirty two": 32, "thirty-two": 32, "बत्तीस": 32,
+    "taintrees": 33, "taintis": 33, "tentis": 33, "thirty three": 33, "thirty-three": 33, "तैंतीस": 33,
+    "chautees": 34, "chautis": 34, "thirty four": 34, "thirty-four": 34, "चौंतीस": 34,
+    "paintees": 35, "paintis": 35, "thirty five": 35, "thirty-five": 35, "पैंतीस": 35,
+    "chhattees": 36, "chhattis": 36, "thirty six": 36, "thirty-six": 36, "छत्तीस": 36,
+    "saintees": 37, "saintis": 37, "thirty seven": 37, "thirty-seven": 37, "सैंतीस": 37,
+    "adhtees": 38, "adhtis": 38, "artis": 38, "thirty eight": 38, "thirty-eight": 38, "अड़तीस": 38,
+    "untalees": 39, "untalis": 39, "thirty nine": 39, "thirty-nine": 39, "उनतालीस": 39,
+    # 40 - 49
+    "chaalees": 40, "chalis": 40, "forty": 40, "चालीस": 40,
+    "iktalees": 41, "iktalis": 41, "forty one": 41, "forty-one": 41, "इकतालीस": 41,
+    "bayalees": 42, "bayalis": 42, "forty two": 42, "forty-two": 42, "बयालीस": 42,
+    "taintalees": 43, "taintalis": 43, "forty three": 43, "forty-three": 43, "तैंतालीस": 43,
+    "chavalees": 44, "chavalis": 44, "chauwalees": 44, "forty four": 44, "forty-four": 44, "चवालीस": 44,
+    "paintalees": 45, "paintalis": 45, "forty five": 45, "forty-five": 45, "पैंतालीस": 45,
+    "chhiyalees": 46, "chhiyalis": 46, "forty six": 46, "forty-six": 46, "छियालीस": 46,
+    "saintaalees": 47, "saintalis": 47, "forty seven": 47, "forty-seven": 47, "सैंतालीस": 47,
+    "adhtalees": 48, "adhtalis": 48, "artalis": 48, "forty eight": 48, "forty-eight": 48, "अड़तालीस": 48,
+    "unchaas": 49, "unchas": 49, "forty nine": 49, "forty-nine": 49, "उनचास": 49,
+    # 50 - 59
+    "pachaas": 50, "pachas": 50, "fifty": 50, "पचास": 50,
+    "ikyawan": 51, "ikyavan": 51, "ikawan": 51, "fifty one": 51, "fifty-one": 51, "इक्यावन": 51,
+    "baawan": 52, "bavan": 52, "baavan": 52, "fifty two": 52, "fifty-two": 52, "बावन": 52,
+    "tirepan": 53, "tirpan": 53, "fifty three": 53, "fifty-three": 53, "तिरपन": 53,
+    "chauwan": 54, "chawwan": 54, "fifty four": 54, "fifty-four": 54, "चौवन": 54,
+    "pachpan": 55, "fifty five": 55, "fifty-five": 55, "पचपन": 55,
+    "chhappan": 56, "fifty six": 56, "fifty-six": 56, "छप्पन": 56,
+    "sattawan": 57, "satavan": 57, "fifty seven": 57, "fifty-seven": 57, "सत्तावन": 57,
+    "atthawan": 58, "athavan": 58, "fifty eight": 58, "fifty-eight": 58, "अट्ठावन": 58,
+    "unsath": 59, "unsat": 59, "fifty nine": 59, "fifty-nine": 59, "उनसठ": 59,
+    # 60 - 69
+    "saath": 60, "sath": 60, "sixty": 60, "साठ": 60,
+    "iksath": 61, "iksat": 61, "sixty one": 61, "sixty-one": 61, "इकसठ": 61,
+    "baasath": 62, "basath": 62, "basat": 62, "sixty two": 62, "sixty-two": 62, "बासठ": 62,
+    "tirsath": 63, "tirsat": 63, "sixty three": 63, "sixty-three": 63, "तिरसठ": 63,
+    "chausath": 64, "chausat": 64, "sixty four": 64, "sixty-four": 64, "चौसठ": 64,
+    "painsath": 65, "painsat": 65, "sixty five": 65, "sixty-five": 65, "पैंसठ": 65,
+    "chhiyasath": 66, "chhiyasat": 66, "sixty six": 66, "sixty-six": 66, "छियासठ": 66,
+    "sarsath": 67, "sarsat": 67, "sixty seven": 67, "sixty-seven": 67, "सरसठ": 67,
+    "ardsath": 68, "athsath": 68, "adhsath": 68, "sixty eight": 68, "sixty-eight": 68, "अड़सठ": 68,
+    "unhattar": 69, "unhatar": 69, "sixty nine": 69, "sixty-nine": 69, "उनहत्तर": 69,
+    # 70 - 79
+    "sattar": 70, "satar": 70, "seventy": 70, "सत्तर": 70,
+    "ikhattar": 71, "ikhatar": 71, "seventy one": 71, "seventy-one": 71, "इकहत्तर": 71,
+    "bahattar": 72, "bahatar": 72, "seventy two": 72, "seventy-two": 72, "बहत्तर": 72,
+    "tihattar": 73, "tihatar": 73, "seventy three": 73, "seventy-three": 73, "तिहत्तर": 73,
+    "chauhattar": 74, "chauhatar": 74, "seventy four": 74, "seventy-four": 74, "चौहत्तर": 74,
+    "pachhattar": 75, "pachhatar": 75, "pachattar": 75, "seventy five": 75, "seventy-five": 75, "पचहत्तर": 75,
+    "chhihattar": 76, "chhihatar": 76, "seventy six": 76, "seventy-six": 76, "छिहत्तर": 76,
+    "sathattar": 77, "sathatar": 77, "seventy seven": 77, "seventy-seven": 77, "सतहत्तर": 77,
+    "athhattar": 78, "ath-hattar": 78, "at-hattar": 78, "seventy eight": 78, "seventy-eight": 78, "अठहत्तर": 78,
+    "unyasi": 79, "unyaasi": 79, "unasi": 79, "unaasi": 79, "seventy nine": 79, "seventy-nine": 79, "उनासी": 79, "उन्यासी": 79,
+    # 80 - 89
+    "assi": 80, "asi": 80, "eighty": 80, "अस्सी": 80,
+    "ikyasi": 81, "ikyaasi": 81, "ikasi": 81, "ikaasi": 81, "eighty one": 81, "eighty-one": 81, "इक्यासी": 81,
+    "bayasi": 82, "bayaasi": 82, "eighty two": 82, "eighty-two": 82, "बयासी": 82,
+    "tirasi": 83, "tiraasi": 83, "eighty three": 83, "eighty-three": 83, "तिरासी": 83,
+    "chaurasi": 84, "chauraasi": 84, "eighty four": 84, "eighty-four": 84, "चौरासी": 84,
+    "pachasi": 85, "pachaasi": 85, "eighty five": 85, "eighty-five": 85, "पचासी": 85,
+    "chhiyasi": 86, "chhiyaasi": 86, "eighty six": 86, "eighty-six": 86, "छियासी": 86,
+    "satasi": 87, "sataasi": 87, "eighty seven": 87, "eighty-seven": 87, "सत्तासी": 87,
+    "atthasi": 88, "atthaasi": 88, "eighty eight": 88, "eighty-eight": 88, "अट्ठासी": 88,
+    "nawasi": 89, "nawaasi": 89, "navasi": 89, "navaasi": 89, "eighty nine": 89, "eighty-nine": 89, "नवासी": 89,
+    # 90 - 99
+    "nabbe": 90, "navve": 90, "nabbey": 90, "ninety": 90, "नब्बे": 90,
+    "ikyanve": 91, "ikyanwey": 91, "ikyaanve": 91, "ninety one": 91, "ninety-one": 91, "इक्यानवे": 91,
+    "baanve": 92, "baanwey": 92, "ninety two": 92, "ninety-two": 92, "बानवे": 92,
+    "tiranve": 93, "tiranwey": 93, "ninety three": 93, "ninety-three": 93, "तिरानवे": 93,
+    "chauranve": 94, "chauranwey": 94, "ninety four": 94, "ninety-four": 94, "चौरानवे": 94,
+    "pachanve": 95, "pachanwey": 95, "ninety five": 95, "ninety-five": 95, "पचानवे": 95,
+    "chhiyanve": 96, "chhiyanwey": 96, "ninety six": 96, "ninety-six": 96, "छियानवे": 96,
+    "sattanve": 97, "sattanwey": 97, "ninety seven": 97, "ninety-seven": 97, "सत्तानवे": 97,
+    "atthanve": 98, "atthanwey": 98, "ninety eight": 98, "ninety-eight": 98, "अट्ठानवे": 98,
+    "ninyanve": 99, "ninyaanve": 99, "ninyanwey": 99, "ninety nine": 99, "ninety-nine": 99, "निन्यानवे": 99,
 }
 
 SEC_MULT_RE = r'(?:sau|so|sou|hundred|hazaar|hazar|hajar|hazaarr|hazarr|thousand|lakh|laakh|laak|lac|lakhs|laakhs|lacs|crore|crores|cr|k|सौ|हज़ार|हजार|लाख|करोड़)'
 
 SEC_NOISE_RE = re.compile(
-    r'\b(?:dedh|dhedh|derh|deydh|dadh|dhai|dhaai|dhaee|adhai|sawa|sava|sawwa|paune|pone|saade|sadhe|sade|'
+    r'(?:(?<=^)|(?<=[^\w\u0900-\u097F]))(?:'
+    r'dedh|dhedh|derh|deydh|dadh|dhai|dhaai|dhaee|adhai|sawa|sava|sawwa|paune|pone|saade|sadhe|sade|'
     r'डेढ़|डेढ|ढाई|ढा़ई|सवा|पौने|साढ़े|साढे|'
     r'sau|so|sou|hundred|hazaar|hazar|hajar|hazaarr|hazarr|thousand|lakh|laakh|laak|lac|lakhs|laakhs|lacs|crore|crores|cr|k|'
     r'सौ|हज़ार|हजार|लाख|करोड़|'
@@ -113,7 +208,8 @@ SEC_NOISE_RE = re.compile(
     r'शून्य|एक|दो|तीन|चार|पाँच|पांच|छह|सात|आठ|नौ|दस|'
     r'bees|pachees|tees|chaalees|pachaas|saath|sattar|assi|nabbe|बीस|पच्चीस|तीस|चालीस|पचास|'
     r'rupees|rupaye|rupya|rupee|rs|inr|/-|रुपये|रुपए|रुपया|रु|'
-    r'send|pay|transfer|bhej|bhejo|de|do|karo|kardo|kar|kripya|please)\b|\b\d+(?:\.\d+)?\b',
+    r'send|pay|transfer|bhej|bhejo|de|do|karo|kardo|kar|kripya|please|भेज|भेजो|करो|कर|दो'
+    r')(?:(?=[^\w\u0900-\u097F])|$)|(?:(?<=^)|(?<=[^\w\u0900-\u097F]))\d+(?:\.\d+)?(?:(?=[^\w\u0900-\u097F])|$)',
     re.IGNORECASE,
 )
 
@@ -140,6 +236,8 @@ class ConservativeSecondaryExtractor(SecondaryExtractor):
         from app.parsers.transcript_repair import TranscriptRepairService
         repaired, _ = TranscriptRepairService.repair(transcript)
         text = repaired.strip().lower()
+        # Replace auxiliary verb phrases where 'do' means 'give/send', not number 2
+        text = re.sub(r'(?:(?<=^)|(?<=[^\w\u0900-\u097F]))(?:bhej|kar|de|भेज|कर|दे)\s+(?:do|दो)(?:(?=[^\w\u0900-\u097F])|$)', ' transfer ', text)
 
         # Check for injection attempts in secondary layer
         is_injection = bool(re.search(
@@ -157,49 +255,68 @@ class ConservativeSecondaryExtractor(SecondaryExtractor):
         t = re.sub(r'(?<!\d)\.|\.(?!\d)', ' ', t)
         t = ' '.join(t.split())
 
-        # Fractional extraction
-        m_dedh = re.search(r'(?:^|\s)(?:dedh|dhedh|derh|deydh|डेढ़|डेढ)\s+(' + SEC_MULT_RE + r')(?:\s|$|[^\w\u0900-\u097F])', t)
+        # Fractional extraction (dedh, dhai, sawa, paune, saade)
+        m_dedh = re.search(r'(?:^|[^\w\u0900-\u097F])(?:dedh|dhedh|derh|deydh|डेढ़|डेढ)\s+(' + SEC_MULT_RE + r')(?:[^\w\u0900-\u097F]|$)', t)
         if m_dedh:
             extracted_amount = int(1.5 * SEC_MULT_MAP.get(m_dedh.group(1), 1000))
         else:
-            m_dhai = re.search(r'(?:^|\s)(?:dhai|dhaai|dhaee|adhai|ढाई|ढा़ई)\s+(' + SEC_MULT_RE + r')(?:\s|$|[^\w\u0900-\u097F])', t)
+            m_dhai = re.search(r'(?:^|[^\w\u0900-\u097F])(?:dhai|dhaai|dhaee|adhai|ढाई|ढा़ई)\s+(' + SEC_MULT_RE + r')(?:[^\w\u0900-\u097F]|$)', t)
             if m_dhai:
                 extracted_amount = int(2.5 * SEC_MULT_MAP.get(m_dhai.group(1), 100))
             else:
-                m_sawa = re.search(r'(?:^|\s)(?:sawa|sava|सवा)\s+([\w\u0900-\u097F]+)\s+(' + SEC_MULT_RE + r')(?:\s|$|[^\w\u0900-\u097F])', t)
+                m_sawa = re.search(r'(?:^|[^\w\u0900-\u097F])(?:sawa|sava|सवा)\s+([\w\u0900-\u097F]+)\s+(' + SEC_MULT_RE + r')(?:[^\w\u0900-\u097F]|$)', t)
                 if m_sawa:
                     val = SEC_WORD_MAP.get(m_sawa.group(1)) or (int(m_sawa.group(1)) if m_sawa.group(1).isdigit() else None)
                     mult = SEC_MULT_MAP.get(m_sawa.group(2))
                     if val is not None and mult is not None:
                         extracted_amount = int((val + 0.25) * mult)
                 else:
-                    m_sawa_std = re.search(r'(?:^|\s)(?:sawa|sava|सवा)\s+(' + SEC_MULT_RE + r')(?:\s|$|[^\w\u0900-\u097F])', t)
+                    m_sawa_std = re.search(r'(?:^|[^\w\u0900-\u097F])(?:sawa|sava|सवा)\s+(' + SEC_MULT_RE + r')(?:[^\w\u0900-\u097F]|$)', t)
                     if m_sawa_std:
                         mult = SEC_MULT_MAP.get(m_sawa_std.group(1))
                         if mult is not None:
                             extracted_amount = int(1.25 * mult)
                     else:
-                        m_paune = re.search(r'(?:^|\s)(?:paune|pone|पौने)\s+([\w\u0900-\u097F]+)\s+(' + SEC_MULT_RE + r')(?:\s|$|[^\w\u0900-\u097F])', t)
+                        m_paune = re.search(r'(?:^|[^\w\u0900-\u097F])(?:paune|pone|पौने)\s+([\w\u0900-\u097F]+)\s+(' + SEC_MULT_RE + r')(?:[^\w\u0900-\u097F]|$)', t)
                         if m_paune:
                             val = SEC_WORD_MAP.get(m_paune.group(1)) or (int(m_paune.group(1)) if m_paune.group(1).isdigit() else None)
                             mult = SEC_MULT_MAP.get(m_paune.group(2))
                             if val is not None and mult is not None:
                                 extracted_amount = int((val - 0.25) * mult)
                         else:
-                            m_saade = re.search(r'(?:^|\s)(?:saade|sadhe|साढ़े)\s+([\w\u0900-\u097F]+)\s+(' + SEC_MULT_RE + r')(?:\s|$|[^\w\u0900-\u097F])', t)
+                            m_saade = re.search(r'(?:^|[^\w\u0900-\u097F])(?:saade|sadhe|साढ़े)\s+([\w\u0900-\u097F]+)\s+(' + SEC_MULT_RE + r')(?:[^\w\u0900-\u097F]|$)', t)
                             if m_saade:
                                 val = SEC_WORD_MAP.get(m_saade.group(1)) or (int(m_saade.group(1)) if m_saade.group(1).isdigit() else None)
                                 mult = SEC_MULT_MAP.get(m_saade.group(2))
                                 if val is not None and mult is not None:
                                     extracted_amount = int((val + 0.5) * mult)
 
-        # Word multiplier combinations (e.g. 'paanch sau', 'do hazaar')
+        # Compound word + multiplier combinations (e.g. 'ek sau bees', 'do sau pachaas', 'teen sau', 'चार सौ', 'एक सौ बीस')
         if extracted_amount is None:
-            m_words = re.search(r'\b(' + '|'.join(SEC_WORD_MAP.keys()) + r')\s+(' + SEC_MULT_RE + r')\b', t)
-            if m_words:
-                extracted_amount = int(SEC_WORD_MAP[m_words.group(1)] * SEC_MULT_MAP[m_words.group(2)])
+            sorted_words = sorted(SEC_WORD_MAP.keys(), key=lambda x: len(x), reverse=True)
+            sorted_mults = sorted(SEC_MULT_MAP.keys(), key=lambda x: len(x), reverse=True)
+            word_re = '(?:' + '|'.join(re.escape(w) for w in sorted_words) + r'|\d+)'
+            mult_re = '(?:' + '|'.join(re.escape(m) for m in sorted_mults) + ')'
+            pattern_mult = re.compile(
+                r'(?:^|[^\w\u0900-\u097F])(?:(' + word_re + r')\s+)?(' + mult_re + r')(?:(?:\s+(' + word_re + r')))?(?:[^\w\u0900-\u097F]|$)',
+                re.IGNORECASE
+            )
+            m_mult = pattern_mult.search(t)
+            if m_mult:
+                w1, mult, w2 = m_mult.group(1), m_mult.group(2), m_mult.group(3)
+                mult_val = SEC_MULT_MAP.get(mult.lower(), 100)
+                if w1:
+                    val1 = int(w1) if w1.isdigit() else SEC_WORD_MAP.get(w1.lower(), 1)
+                else:
+                    val1 = 1
+                if w2:
+                    val2 = int(w2) if w2.isdigit() else SEC_WORD_MAP.get(w2.lower(), 0)
+                else:
+                    val2 = 0
+                if val1 is not None and mult_val is not None and val2 is not None:
+                    extracted_amount = int(val1 * mult_val + val2)
 
-        # Digits + optional multiplier (e.g. '1500 rupaye', '1.5 hazaar', 'send 500')
+        # Digits + optional multiplier (e.g. '1500 rupaye', '1.5 hazaar', 'send 500', '120', '300')
         if extracted_amount is None:
             m_amt = re.search(
                 r'(?:(?:₹|rs\.?|inr)\s*)?(\b\d+(?:\.\d+)?)\s*(' + SEC_MULT_RE + r')?(?:\s*(?:rupees|rupaye|rupya|rs|inr|/-|रुपये|रुपए|रु))?',
@@ -210,8 +327,20 @@ class ConservativeSecondaryExtractor(SecondaryExtractor):
                 mult = SEC_MULT_MAP.get(m_amt.group(2), 1) if m_amt.group(2) else 1
                 extracted_amount = int(num * mult)
 
+        # Standalone word amounts (e.g. 'pachaas rupaye', 'bees', 'पचास')
+        if extracted_amount is None:
+            sorted_words = sorted(SEC_WORD_MAP.keys(), key=lambda x: len(x), reverse=True)
+            word_re = '(?:' + '|'.join(re.escape(w) for w in sorted_words) + ')'
+            pattern_word = re.compile(
+                r'(?:^|[^\w\u0900-\u097F])(' + word_re + r')(?:[^\w\u0900-\u097F]|$)',
+                re.IGNORECASE
+            )
+            m_single = pattern_word.search(t)
+            if m_single and m_single.group(1).lower() in SEC_WORD_MAP:
+                extracted_amount = SEC_WORD_MAP[m_single.group(1).lower()]
+
         # 2. Independent payee extraction
-        m_ko = re.search(r'^(?:please\s+|kripya\s+)?(.*?)\s+ko\b', text, re.IGNORECASE)
+        m_ko = re.search(r'^(?:please\s+|kripya\s+)?(.*?)\s+(?:ko|को)(?:[^\w\u0900-\u097F]|$)', text, re.IGNORECASE)
         if m_ko:
             cand = _strip_secondary_noise(m_ko.group(1))
             if cand:
@@ -377,8 +506,13 @@ class CrossCheckEngine:
         # 6. Independent Payee Comparison
         payees_match = False
         if p_payee_name and s_payee_name:
-            # Fuzzy comparison between resolved contact name and secondary raw payee extraction
-            similarity = fuzz.token_set_ratio(p_payee_name.lower(), s_payee_name.lower())
+            from app.parsers.payee_resolver import DEVANAGARI_NAME_MAP, devanagari_to_latin
+            s_clean = s_payee_name.lower().strip()
+            s_latin = (DEVANAGARI_NAME_MAP.get(s_clean) or devanagari_to_latin(s_clean)).lower().strip()
+            similarity = max(
+                fuzz.token_set_ratio(p_payee_name.lower(), s_clean),
+                fuzz.token_set_ratio(p_payee_name.lower(), s_latin) if s_latin else 0.0,
+            )
             payees_match = similarity >= 80.0
 
         if not payees_match:

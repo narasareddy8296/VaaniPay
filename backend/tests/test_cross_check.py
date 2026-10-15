@@ -220,3 +220,40 @@ def test_cross_check_causes_zero_ledger_side_effects(db_session: Session):
 
     assert final_priya_balance == initial_priya_balance
     assert final_ledger_count == initial_ledger_count == 0
+
+
+def test_cross_check_hindi_120_300_400_250_consensus(db_session: Session):
+    """Verifies that 120, 300, 400, 250 in Hindi (Hinglish and Devanagari) achieve cross-check consensus."""
+    engine = CrossCheckEngine()
+    test_cases = [
+        ("Ramesh ko 120 rupaye bhej do", 120),
+        ("Ramesh ko 300 rupaye bhej do", 300),
+        ("Ramesh ko 400 rupaye bhej do", 400),
+        ("Ramesh ko 250 rupaye bhej do", 250),
+        ("Ramesh ko ek sau bees rupaye bhej do", 120),
+        ("Ramesh ko teen sau rupaye bhej do", 300),
+        ("Ramesh ko chaar sau rupaye bhej do", 400),
+        ("Ramesh ko char sau rupaye bhej do", 400),
+        ("Ramesh ko dhai sau rupaye bhej do", 250),
+        ("Ramesh ko do sau pachaas rupaye bhej do", 250),
+        ("रमेश को 120 रुपये भेजो", 120),
+        ("रमेश को 300 रुपये भेजो", 300),
+        ("रमेश को 400 रुपये भेजो", 400),
+        ("रमेश को 250 रुपये भेजो", 250),
+        ("रमेश को एक सौ बीस रुपये भेज दो", 120),
+        ("रमेश को तीन सौ रुपये भेज दो", 300),
+        ("रमेश को चार सौ रुपये भेज दो", 400),
+        ("रमेश को दो सौ पचास रुपये भेज दो", 250),
+        ("रमेश को ढाई सौ रुपये भेज दो", 250),
+    ]
+
+    for transcript, expected_amt in test_cases:
+        p_amount = parse_amount(transcript)
+        p_payee = PayeeResolver.resolve_for_account(db_session, "acc_priya", transcript)
+        res = engine.reconcile(transcript, p_amount, p_payee)
+
+        assert res.status == CrossCheckStatus.AGREED, f"Failed for '{transcript}': {res.explanation}"
+        assert res.final_amount == expected_amt, f"Amount mismatch for '{transcript}': expected {expected_amt}, got {res.final_amount}"
+        assert res.final_payee_name == "Ramesh Kumar"
+        assert res.can_proceed_to_readback is True
+

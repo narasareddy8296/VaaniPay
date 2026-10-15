@@ -157,3 +157,19 @@ def test_customer_contact_isolation(db_session: Session):
     assert ramesh_result.status == PayeeResolutionStatus.MATCHED
     assert ramesh_result.selected_contact.contact_name == "Amit"
     assert ramesh_result.is_authorized_payee is True
+
+
+def test_devanagari_payee_resolution(db_session: Session):
+    """Verifies that Hindi commands with Devanagari names and 'को' resolve correctly."""
+    res1 = PayeeResolver.resolve_for_account(db_session, "acc_priya", "रमेश को एक सौ बीस रुपये भेज दो")
+    assert res1.status == PayeeResolutionStatus.MATCHED
+    assert res1.selected_contact.contact_name == "Ramesh Kumar"
+
+    res2 = PayeeResolver.resolve_for_account(db_session, "acc_priya", "नेहा को 300 रुपये भेजो")
+    assert res2.status == PayeeResolutionStatus.MATCHED
+    assert res2.selected_contact.contact_name == "Neha"
+
+    res3 = PayeeResolver.resolve_for_account(db_session, "acc_priya", "अभिषेक को 400 रुपये भेज दो")
+    assert res3.status == PayeeResolutionStatus.MATCHED
+    assert res3.selected_contact.contact_name == "Abhishek Verma"
+

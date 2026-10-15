@@ -71,7 +71,7 @@ NEGATIVE_TOKENS = [
 PAYMENT_PATTERNS = [
     r"\b\d+\b",  # Any digits
     r"\b(?:send|transfer|pay|bhejo|bhej do|भेज|भेजो)\s+\d+",
-    r"(?:sau|so|hazaar|hazar|lakh|lac|crore|dedh|dhai|sawa|paune|saade|rupaye|rupees|rs|inr|डेढ़|ढाई|सवा|पौने|साढ़े|सौ|हज़ार|हजार|लाख|करोड़|रुपये|रुपए|रु)",
+    r"(?:sau|so|hazaar|hazar|lakh|lac|crore|dedh|dhai|sawa|paune|saade|bees|tees|chaalees|pachaas|saath|sattar|assi|nabbe|rupaye|rupees|rs|inr|डेढ़|ढाई|सवा|पौने|साढ़े|सौ|हज़ार|हजार|लाख|करोड़|बीस|तीस|चालीस|पचास|साठ|सत्तर|अस्सी|नब्बे|रुपये|रुपए|रु)",
 ]
 
 AMBIGUOUS_PATTERNS = [

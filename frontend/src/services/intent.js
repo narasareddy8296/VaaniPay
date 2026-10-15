@@ -49,7 +49,7 @@ const NEGATIVE_TOKENS = [
 const PAYMENT_PATTERNS = [
   /\b\d+\b/,
   /\b(?:send|transfer|pay|bhejo|bhej do|भेज|भेजो)\s+\d+/,
-  /(?:sau|so|hazaar|hazar|lakh|lac|crore|dedh|dhai|sawa|paune|saade|rupaye|rupees|rs|inr|डेढ़|ढाई|सवा|पौने|साढ़े|सौ|हज़ार|हजार|लाख|करोड़|रुपये|रुपए|रु)/i,
+  /(?:sau|so|hazaar|hazar|lakh|lac|crore|dedh|dhai|sawa|paune|saade|bees|tees|chaalees|pachaas|saath|sattar|assi|nabbe|rupaye|rupees|rs|inr|डेढ़|ढाई|सवा|पौने|साढ़े|सौ|हज़ार|हजार|लाख|करोड़|बीस|तीस|चालीस|पचास|साठ|सत्तर|अस्सी|नब्बे|रुपये|रुपए|रु)/i,
 ];
 
 const AMBIGUOUS_PATTERNS = [

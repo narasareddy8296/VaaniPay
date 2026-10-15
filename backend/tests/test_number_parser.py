@@ -194,3 +194,37 @@ def test_amount_within_limit_passes_validation():
     assert result.amount == 5000
     assert result.is_within_limit is True
     assert result.limit_exceeded is False
+
+
+def test_hindi_colloquial_and_random_numbers():
+    """Verifies recognition of 120, 300, 400, 250 and random numbers in Hinglish and Devanagari."""
+    test_cases = [
+        ("120 rupaye", 120),
+        ("300 rupaye", 300),
+        ("400 rupaye", 400),
+        ("250 rupaye", 250),
+        ("ek sau bees rupaye", 120),
+        ("sau bees", 120),
+        ("teen sau", 300),
+        ("chaar sau", 400),
+        ("char sau", 400),
+        ("dhai sau", 250),
+        ("do sau pachaas", 250),
+        ("एक सौ बीस रुपये", 120),
+        ("तीन सौ", 300),
+        ("चार सौ", 400),
+        ("दो सौ पचास", 250),
+        ("ढाई सौ", 250),
+        ("ek sau pachees", 125),
+        ("teen sau chaalees", 340),
+        ("chaar sau pachaas", 450),
+        ("pachattar", 75),
+        ("ninyanve", 99),
+        ("इक्कीस", 21),
+        ("पैंतीस", 35),
+    ]
+    for phrase, expected in test_cases:
+        res = parse_amount(phrase)
+        assert res.status == ParseStatus.SUCCESS, f"Failed for '{phrase}': {res.explanation}"
+        assert res.amount == expected, f"Failed for '{phrase}': expected {expected}, got {res.amount}"
+

@@ -32,9 +32,11 @@ class TranscriptRepairService:
         # sawa2lakh -> sawa 2 lakh
         (re.compile(r'\b(sawa|sava|sawwa)(\d+)(lakh|lac|hazaar|hazar|sau)\b', re.IGNORECASE), r'\1 \2 \3'),
         # paanchsau -> paanch sau
-        (re.compile(r'\b(ek|do|teen|chaar|paanch|chhah|saat|aath|nau|das)(sau|so|hazaar|hazar|lakh)\b', re.IGNORECASE), r'\1 \2'),
-        # 500rupaye -> 500 rupaye
-        (re.compile(r'(\d+)(rupaye|rupees|rupya|rs|inr)\b', re.IGNORECASE), r'\1 \2'),
+        (re.compile(r'\b(ek|do|teen|chaar|char|paanch|panch|chhah|chhe|che|saat|aath|nau|das)(sau|so|hazaar|hazar|lakh)\b', re.IGNORECASE), r'\1 \2'),
+        # Devanagari merged numbers and multipliers e.g. एकसौ, तीनसौ, चारसौ, दोसौ, ढाईसौ
+        (re.compile(r'(एक|दो|तीन|चार|पाँच|पांच|छह|सात|आठ|नौ|दस|ढाई|डेढ़)(सौ|हज़ार|हजार|लाख|करोड़)', re.IGNORECASE), r'\1 \2'),
+        # 500rupaye -> 500 rupaye (English and Devanagari currency tokens)
+        (re.compile(r'(\d+)(rupaye|rupees|rupya|rs|inr|रुपये|रुपए|रु)(?=[^\w\u0900-\u097F]|$)', re.IGNORECASE), r'\1 \2'),
         # bhejdo -> bhej do
         (re.compile(r'\b(bhej|kar|de)(do|dena|karo|dijiye)\b', re.IGNORECASE), r'\1 \2'),
     ]

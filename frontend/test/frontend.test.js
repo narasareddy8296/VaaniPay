@@ -432,6 +432,14 @@ describe('Stage 10: Hinglish & Devanagari Voice Amount Recognition Tests', () =>
       'डेढ़ हज़ार',
       'ढाई सौ',
       'सवा दो लाख',
+      'ek sau bees rupaye',
+      'teen sau rupaye',
+      'chaar sau rupaye',
+      'do sau pachaas rupaye',
+      'एक सौ बीस रुपये',
+      'तीन सौ रुपये',
+      'चार सौ रुपये',
+      'दो सौ पचास रुपये',
     ];
 
     for (const phrase of amountPhrases) {

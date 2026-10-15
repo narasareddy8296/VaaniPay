@@ -56,22 +56,100 @@ HINDI_ENGLISH_NUMBERS = {
     "gyarah": 11, "gyara": 11, "eleven": 11, "ग्यारह": 11,
     "baarah": 12, "bara": 12, "twelve": 12, "बारह": 12,
     "terah": 13, "tera": 13, "thirteen": 13, "तेरह": 13,
-    "chaudah": 14, "chouda": 14, "fourteen": 14, "चौदह": 14,
+    "chaudah": 14, "chauda": 14, "chouda": 14, "fourteen": 14, "चौदह": 14,
     "pandrah": 15, "pandra": 15, "fifteen": 15, "पंद्रह": 15,
     "solah": 16, "sola": 16, "sixteen": 16, "सोलह": 16,
     "satrah": 17, "satra": 17, "seventeen": 17, "सत्रह": 17,
-    "atharah": 18, "athara": 18, "eighteen": 18, "अट्ठारह": 18,
+    "atharah": 18, "athara": 18, "eighteen": 18, "अट्ठारह": 18, "अठारह": 18,
     "unnees": 19, "unnis": 19, "nineteen": 19, "उन्नीस": 19,
-    # 20 - 90
+    # 20 - 29
     "bees": 20, "bis": 20, "twenty": 20, "बीस": 20,
+    "ikkees": 21, "ikkis": 21, "twenty one": 21, "twenty-one": 21, "इक्कीस": 21,
+    "baaees": 22, "bais": 22, "twenty two": 22, "twenty-two": 22, "बाईस": 22,
+    "teees": 23, "teis": 23, "twenty three": 23, "twenty-three": 23, "तेईस": 23,
+    "chaubees": 24, "chaubis": 24, "twenty four": 24, "twenty-four": 24, "चौबीस": 24,
     "pachees": 25, "pachis": 25, "twenty five": 25, "twenty-five": 25, "पच्चीस": 25,
+    "chhabbees": 26, "chhabbis": 26, "twenty six": 26, "twenty-six": 26, "छब्बीस": 26,
+    "sattaees": 27, "sattais": 27, "twenty seven": 27, "twenty-seven": 27, "सत्ताईस": 27,
+    "atthaees": 28, "atthais": 28, "twenty eight": 28, "twenty-eight": 28, "अट्ठाईस": 28,
+    "untees": 29, "untis": 29, "twenty nine": 29, "twenty-nine": 29, "उनतीस": 29,
+    # 30 - 39
     "tees": 30, "tis": 30, "thirty": 30, "तीस": 30,
+    "ikattees": 31, "ikattis": 31, "thirty one": 31, "thirty-one": 31, "इकत्तीस": 31,
+    "battees": 32, "battis": 32, "thirty two": 32, "thirty-two": 32, "बत्तीस": 32,
+    "taintrees": 33, "taintis": 33, "tentis": 33, "thirty three": 33, "thirty-three": 33, "तैंतीस": 33,
+    "chautees": 34, "chautis": 34, "thirty four": 34, "thirty-four": 34, "चौंतीस": 34,
+    "paintees": 35, "paintis": 35, "thirty five": 35, "thirty-five": 35, "पैंतीस": 35,
+    "chhattees": 36, "chhattis": 36, "thirty six": 36, "thirty-six": 36, "छत्तीस": 36,
+    "saintees": 37, "saintis": 37, "thirty seven": 37, "thirty-seven": 37, "सैंतीस": 37,
+    "adhtees": 38, "adhtis": 38, "artis": 38, "thirty eight": 38, "thirty-eight": 38, "अड़तीस": 38,
+    "untalees": 39, "untalis": 39, "thirty nine": 39, "thirty-nine": 39, "उनतालीस": 39,
+    # 40 - 49
     "chaalees": 40, "chalis": 40, "forty": 40, "चालीस": 40,
+    "iktalees": 41, "iktalis": 41, "forty one": 41, "forty-one": 41, "इकतालीस": 41,
+    "bayalees": 42, "bayalis": 42, "forty two": 42, "forty-two": 42, "बयालीस": 42,
+    "taintalees": 43, "taintalis": 43, "forty three": 43, "forty-three": 43, "तैंतालीस": 43,
+    "chavalees": 44, "chavalis": 44, "chauwalees": 44, "forty four": 44, "forty-four": 44, "चवालीस": 44,
+    "paintalees": 45, "paintalis": 45, "forty five": 45, "forty-five": 45, "पैंतालीस": 45,
+    "chhiyalees": 46, "chhiyalis": 46, "forty six": 46, "forty-six": 46, "छियालीस": 46,
+    "saintaalees": 47, "saintalis": 47, "forty seven": 47, "forty-seven": 47, "सैंतालीस": 47,
+    "adhtalees": 48, "adhtalis": 48, "artalis": 48, "forty eight": 48, "forty-eight": 48, "अड़तालीस": 48,
+    "unchaas": 49, "unchas": 49, "forty nine": 49, "forty-nine": 49, "उनचास": 49,
+    # 50 - 59
     "pachaas": 50, "pachas": 50, "fifty": 50, "पचास": 50,
+    "ikyawan": 51, "ikyavan": 51, "ikawan": 51, "fifty one": 51, "fifty-one": 51, "इक्यावन": 51,
+    "baawan": 52, "bavan": 52, "baavan": 52, "fifty two": 52, "fifty-two": 52, "बावन": 52,
+    "tirepan": 53, "tirpan": 53, "fifty three": 53, "fifty-three": 53, "तिरपन": 53,
+    "chauwan": 54, "chawwan": 54, "fifty four": 54, "fifty-four": 54, "चौवन": 54,
+    "pachpan": 55, "fifty five": 55, "fifty-five": 55, "पचपन": 55,
+    "chhappan": 56, "fifty six": 56, "fifty-six": 56, "छप्पन": 56,
+    "sattawan": 57, "satavan": 57, "fifty seven": 57, "fifty-seven": 57, "सत्तावन": 57,
+    "atthawan": 58, "athavan": 58, "fifty eight": 58, "fifty-eight": 58, "अट्ठावन": 58,
+    "unsath": 59, "unsat": 59, "fifty nine": 59, "fifty-nine": 59, "उनसठ": 59,
+    # 60 - 69
     "saath": 60, "sath": 60, "sixty": 60, "साठ": 60,
-    "sattar": 70, "seventy": 70, "सत्तर": 70,
-    "assi": 80, "eighty": 80, "अस्सी": 80,
-    "nabbe": 90, "navve": 90, "ninety": 90, "नब्बे": 90,
+    "iksath": 61, "iksat": 61, "sixty one": 61, "sixty-one": 61, "इकसठ": 61,
+    "baasath": 62, "basath": 62, "basat": 62, "sixty two": 62, "sixty-two": 62, "बासठ": 62,
+    "tirsath": 63, "tirsat": 63, "sixty three": 63, "sixty-three": 63, "तिरसठ": 63,
+    "chausath": 64, "chausat": 64, "sixty four": 64, "sixty-four": 64, "चौसठ": 64,
+    "painsath": 65, "painsat": 65, "sixty five": 65, "sixty-five": 65, "पैंसठ": 65,
+    "chhiyasath": 66, "chhiyasat": 66, "sixty six": 66, "sixty-six": 66, "छियासठ": 66,
+    "sarsath": 67, "sarsat": 67, "sixty seven": 67, "sixty-seven": 67, "सरसठ": 67,
+    "ardsath": 68, "athsath": 68, "adhsath": 68, "sixty eight": 68, "sixty-eight": 68, "अड़सठ": 68,
+    "unhattar": 69, "unhatar": 69, "sixty nine": 69, "sixty-nine": 69, "उनहत्तर": 69,
+    # 70 - 79
+    "sattar": 70, "satar": 70, "seventy": 70, "सत्तर": 70,
+    "ikhattar": 71, "ikhatar": 71, "seventy one": 71, "seventy-one": 71, "इकहत्तर": 71,
+    "bahattar": 72, "bahatar": 72, "seventy two": 72, "seventy-two": 72, "बहत्तर": 72,
+    "tihattar": 73, "tihatar": 73, "seventy three": 73, "seventy-three": 73, "तिहत्तर": 73,
+    "chauhattar": 74, "chauhatar": 74, "seventy four": 74, "seventy-four": 74, "चौहत्तर": 74,
+    "pachhattar": 75, "pachhatar": 75, "pachattar": 75, "seventy five": 75, "seventy-five": 75, "पचहत्तर": 75,
+    "chhihattar": 76, "chhihatar": 76, "seventy six": 76, "seventy-six": 76, "छिहत्तर": 76,
+    "sathattar": 77, "sathatar": 77, "seventy seven": 77, "seventy-seven": 77, "सतहत्तर": 77,
+    "athhattar": 78, "ath-hattar": 78, "at-hattar": 78, "seventy eight": 78, "seventy-eight": 78, "अठहत्तर": 78,
+    "unyasi": 79, "unyaasi": 79, "unasi": 79, "unaasi": 79, "seventy nine": 79, "seventy-nine": 79, "उनासी": 79, "उन्यासी": 79,
+    # 80 - 89
+    "assi": 80, "asi": 80, "eighty": 80, "अस्सी": 80,
+    "ikyasi": 81, "ikyaasi": 81, "ikasi": 81, "ikaasi": 81, "eighty one": 81, "eighty-one": 81, "इक्यासी": 81,
+    "bayasi": 82, "bayaasi": 82, "eighty two": 82, "eighty-two": 82, "बयासी": 82,
+    "tirasi": 83, "tiraasi": 83, "eighty three": 83, "eighty-three": 83, "तिरासी": 83,
+    "chaurasi": 84, "chauraasi": 84, "eighty four": 84, "eighty-four": 84, "चौरासी": 84,
+    "pachasi": 85, "pachaasi": 85, "eighty five": 85, "eighty-five": 85, "पचासी": 85,
+    "chhiyasi": 86, "chhiyaasi": 86, "eighty six": 86, "eighty-six": 86, "छियासी": 86,
+    "satasi": 87, "sataasi": 87, "eighty seven": 87, "eighty-seven": 87, "सत्तासी": 87,
+    "atthasi": 88, "atthaasi": 88, "eighty eight": 88, "eighty-eight": 88, "अट्ठासी": 88,
+    "nawasi": 89, "nawaasi": 89, "navasi": 89, "navaasi": 89, "eighty nine": 89, "eighty-nine": 89, "नवासी": 89,
+    # 90 - 99
+    "nabbe": 90, "navve": 90, "nabbey": 90, "ninety": 90, "नब्बे": 90,
+    "ikyanve": 91, "ikyanwey": 91, "ikyaanve": 91, "ninety one": 91, "ninety-one": 91, "इक्यानवे": 91,
+    "baanve": 92, "baanwey": 92, "ninety two": 92, "ninety-two": 92, "बानवे": 92,
+    "tiranve": 93, "tiranwey": 93, "ninety three": 93, "ninety-three": 93, "तिरानवे": 93,
+    "chauranve": 94, "chauranwey": 94, "ninety four": 94, "ninety-four": 94, "चौरानवे": 94,
+    "pachanve": 95, "pachanwey": 95, "ninety five": 95, "ninety-five": 95, "पचानवे": 95,
+    "chhiyanve": 96, "chhiyanwey": 96, "ninety six": 96, "ninety-six": 96, "छियानवे": 96,
+    "sattanve": 97, "sattanwey": 97, "ninety seven": 97, "ninety-seven": 97, "सत्तानवे": 97,
+    "atthanve": 98, "atthanwey": 98, "ninety eight": 98, "ninety-eight": 98, "अट्ठानवे": 98,
+    "ninyanve": 99, "ninyaanve": 99, "ninyanwey": 99, "ninety nine": 99, "ninety-nine": 99, "निन्यानवे": 99,
 }
 
 MULTIPLIERS = {
@@ -96,7 +174,8 @@ def _clean_text(text: str) -> str:
     s = repaired.translate(DEVANAGARI_DIGITS)
     # Normalize unicode symbols (e.g. ₹ to ' rs ')
     s = s.replace("₹", " rs ")
-    s = re.sub(r'\b(?:रुपये|रुपए|रुपया|रुपयी|रु)\b', ' rs ', s)
+    # Replace Devanagari currency words using unicode-safe word boundaries (avoids ASCII \b destroying Devanagari words)
+    s = re.sub(r'(?:(?<=^)|(?<=[^\w\u0900-\u097F]))(?:रुपये|रुपए|रुपया|रुपयी|रु)(?:(?=[^\w\u0900-\u097F])|$)', ' rs ', s)
     s = s.lower()
     # Strip commas inside numbers (e.g. 1,500 -> 1500)
     s = re.sub(r'(?<=\d),(?=\d)', '', s)
